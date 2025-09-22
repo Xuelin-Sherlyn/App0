@@ -138,9 +138,9 @@ int main(void)
   screen.SSD1306_Init();
   screen.SSD1306_ClearBuffer();
   screen.SSD1306_DrawRect(20, 20, 32, 32, 1);
-  screen.SSD1306_FillRect(64, 20, 32, 32, 1);
+  screen.SSD1306_FillRect(112, 48, 16, 16, 1);
   screen.SSD1306_DrawString(0, 0, "Akie~", 1);
-  screen.SSD1306_DrawString(0, 20, "TestString", 1);
+  screen.SSD1306_DrawString(0, 20, "Happy Birthday", 1);
   screen.SSD1306_UpdateScreen();
   // TIM17_Delay_Ms(2000);
   // LCD_CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie002);
@@ -159,10 +159,10 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (val)
   {
-    HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+    // HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
     // for循环大概一个时钟周期，但该用TIM还得用TIM，HAL_Delay这玩意阻塞的
     // for (volatile int i = 0; i < 48000000; i++);
-    TIM17_Delay_Ms(1000);
+    // TIM17_Delay_Ms(1000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

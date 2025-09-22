@@ -411,7 +411,7 @@ void SSD1306::SSD1306_DrawChar(uint8_t x, uint8_t y, char ch, uint8_t color)
         
         for (uint8_t col = 0; col < 8; col++) {
             if (line & (1 << (7 - col))) { // 检查每一位
-                SSD1306_DrawPixel(x + col, y * 8 + row, color);
+                SSD1306_DrawPixel(x + col, y + row, color);
             }
         }
     }
