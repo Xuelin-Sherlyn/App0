@@ -41,13 +41,7 @@ extern SPI_HandleTypeDef hspi6;
 void MX_SPI6_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-void SPI_LCD_Init(void);
-void LCD_SetColor(uint32_t Color);
-void LCD_SetBackColor(uint32_t Color);
-void LCD_Clear(void);
-void LCD_FillRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height);
-void LCD_DrawImage(uint16_t x,uint16_t y,uint16_t width,uint16_t height,const uint8_t *pImage);
-void LCD_CopyBuffer(uint16_t x, uint16_t y,uint16_t width,uint16_t height,uint16_t *DataBuff);
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

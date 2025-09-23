@@ -47,6 +47,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
     Core/Src/AkieImage.c
     Core/Src/ssd1306.cpp
+    Core/Src/st7789.cpp
 )
 
 # Add include paths

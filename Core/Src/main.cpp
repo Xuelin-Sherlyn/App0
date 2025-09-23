@@ -33,6 +33,7 @@
 #include <sys/_intsup.h>
 #include "AkieImage.h"
 #include "ssd1306.hpp"
+#include "st7789.hpp"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -53,7 +54,8 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-SSD1306 screen(&hi2c1);
+SSD1306 i2cScreen(&hi2c1);
+ST7789 spiScreen(&hspi6);
 
 uint8_t val = 1;
 __attribute__((section(".ram_d1"))) 
@@ -119,35 +121,36 @@ int main(void)
   MX_SPI6_Init();
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
-  SPI_LCD_Init();
+  // SPI_LCD_Init();
+  spiScreen.LCD_Init();
   LCD_Backlight_ON;
-  LCD_SetColor(0xFF2070CF);
-  LCD_SetBackColor(0xFF000000);
-  LCD_Clear();
-  LCD_FillRect(10, 10, 100, 100);
-  LCD_SetColor(0xFFFF0000);
-  LCD_FillRect(50, 50, 100, 100);
-  LCD_SetColor(0xFF00FF00);
-  LCD_FillRect(90, 90, 100, 100);
-  LCD_SetColor(0xFF0000FF);
-  LCD_FillRect(130, 130, 100, 100);
+  spiScreen.ST7789_SetColor(0xFF2070CF);
+  spiScreen.ST7789_SetBackColor(0xFF000000);
+  spiScreen.ST7789_Clear();
+  spiScreen.ST7789_FillRect(10, 10, 100, 100);
+  spiScreen.ST7789_SetColor(0xFFFF0000);
+  spiScreen.ST7789_FillRect(50, 50, 100, 100);
+  spiScreen.ST7789_SetColor(0xFF00FF00);
+  spiScreen.ST7789_FillRect(90, 90, 100, 100);
+  spiScreen.ST7789_SetColor(0xFF0000FF);
+  spiScreen.ST7789_FillRect(130, 130, 100, 100);
   printf("\033[35mThis is a run in QSPI Flash`s Application, Execute method is XIP\n\033[31mCall \"resetMem\"to clean usart1 recive memory, \"Exit\" to exit Application\033[0m\n");
-  LCD_SetColor(0xFFFFFFFF);
-  LCD_CopyBuffer(10, 10, 128, 128, (uint16_t*)gImage_Akie000);
-  LCD_CopyBuffer(148, 10, 128, 128, (uint16_t*)gImage_Akie001);
-  screen.SSD1306_Init();
-  screen.SSD1306_ClearBuffer();
-  screen.SSD1306_DrawRect(20, 20, 32, 32, 1);
-  screen.SSD1306_FillRect(112, 48, 16, 16, 1);
-  screen.SSD1306_DrawString(0, 0, "Akie~", 1);
-  screen.SSD1306_DrawString(0, 20, "Happy Birthday", 1);
-  screen.SSD1306_UpdateScreen();
+  spiScreen.ST7789_SetColor(0xFFFFFFFF);
+  spiScreen.ST7789_CopyBuffer(10, 10, 128, 128, (uint16_t*)gImage_Akie000);
+  spiScreen.ST7789_CopyBuffer(148, 10, 128, 128, (uint16_t*)gImage_Akie001);
+  i2cScreen.SSD1306_Init();
+  i2cScreen.SSD1306_ClearBuffer();
+  i2cScreen.SSD1306_DrawRect(20, 20, 32, 32, 1);
+  i2cScreen.SSD1306_FillRect(112, 48, 16, 16, 1);
+  i2cScreen.SSD1306_DrawString(0, 0, "Akie~", 1);
+  i2cScreen.SSD1306_DrawString(0, 20, "Happy Birthday", 1);
+  i2cScreen.SSD1306_UpdateScreen();
   // TIM17_Delay_Ms(2000);
-  // LCD_CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie002);
+  // ST7789_CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie002);
   // TIM17_Delay_Ms(2000);
-  // LCD_CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie003);
+  // ST7789_CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie003);
   TIM17_Delay_Ms(2000);
-  LCD_CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie006);
+  spiScreen.ST7789_CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie006);
   // HAL_UART_Receive_IT(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
   // HAL_UART_Receive_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
   memset(mSerialReciveBuffer, 0xff, ReciveSize);
@@ -235,11 +238,11 @@ void SystemClock_Config(void)
 //   {
 //     if(strncmp(mSerialReciveBuffer, "gImage_Akie002", ReciveSize) == 0)
 //     {
-//       LCD_CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie002);
+//       ST7789_CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie002);
 //     }
 //     else if (strncmp(mSerialReciveBuffer, "gImage_Akie003", ReciveSize) == 0) 
 //     {
-//       LCD_CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie003);
+//       ST7789_CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie003);
 //     }
 //     else {
 //       HAL_UART_Transmit_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
@@ -265,23 +268,23 @@ void mProcess_SerialReciveData(char* data, uint16_t Size)
 {
   if(strncmp(data, "gImage_Akie002", Size) == 0)
     {
-      LCD_CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie002);
+      spiScreen.ST7789_CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie002);
     }
   else if (strncmp(data, "gImage_Akie003", Size) == 0)
     {
-      LCD_CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie003);
+      spiScreen.ST7789_CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie003);
     }
   else if(strncmp(data, "gImage_Akie004", Size) == 0)
     {
-      LCD_CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie004);
+      spiScreen.ST7789_CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie004);
     }
   else if (strncmp(data, "gImage_Akie005", Size) == 0)
     {
-      LCD_CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie005);
+      spiScreen.ST7789_CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie005);
     }
   else if (strncmp(data, "gImage_Akie006", Size) == 0)
     {
-      LCD_CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie006);
+      spiScreen.ST7789_CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie006);
     }
   else if (strncmp(data, "resetMem", Size) == 0) {
       memset(mSerialReciveBuffer, 255, ReciveSize);
