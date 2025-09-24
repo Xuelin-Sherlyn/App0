@@ -34,6 +34,7 @@
 #include "AkieImage.h"
 #include "ssd1306.hpp"
 #include "st7789.hpp"
+#include "compImage.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -152,12 +153,13 @@ int main(void)
   i2cScreen.DrawNumber(0, 32, 20160126, 1);
   i2cScreen.DrawFloat(0, 48, 0.767f, 5, 3, 1);
   i2cScreen.UpdateScreen();
+  spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_CompImage);
   TIM17_Delay_Ms(2000);
-  spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie002);
+  spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie004);
   TIM17_Delay_Ms(2000);
-  spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie003);
+  spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie005);
   TIM17_Delay_Ms(2000);
-  spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie006);
+  spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie008);
   spiScreen.DrawString(0, 0, "gImage_Akie006");
   spiScreen.DrawNumber(0, 16, 123);
   spiScreen.DrawFloat(0, 32, 10.345, 8, 4);

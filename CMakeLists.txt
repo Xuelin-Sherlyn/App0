@@ -49,6 +49,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Src/ssd1306.cpp
     Core/Src/st7789.cpp
     Core/Src/display_font.c
+    Core/Src/compImage.c
 )
 
 # Add include paths

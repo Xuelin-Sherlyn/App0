@@ -5,3 +5,5 @@ extern const unsigned char gImage_Akie003[];
 extern const unsigned char gImage_Akie004[];
 extern const unsigned char gImage_Akie005[];
 extern const unsigned char gImage_Akie006[];
+extern const unsigned char gImage_Akie007[];
+extern const unsigned char gImage_Akie008[];
