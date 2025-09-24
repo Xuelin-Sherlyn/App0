@@ -5,7 +5,9 @@
 #include "stm32h7xx_hal_spi.h"
 #include "tim.h"
 #include <cstdint>
+#include <stdio.h>
 #include <string.h>
+#include "display_font.h"
 
 ST7789::ST7789(SPI_HandleTypeDef* hspiHandle) : hspi(hspiHandle){}
 
@@ -13,93 +15,93 @@ ST7789::ST7789(SPI_HandleTypeDef* hspiHandle) : hspi(hspiHandle){}
   *	@brief	初始化ST7789显示屏
   *	@note	显示屏初始化为320*240
 */
-HAL_StatusTypeDef ST7789::LCD_Init(void)
+HAL_StatusTypeDef ST7789::Init(void)
 {
     HAL_StatusTypeDef status;
     // 1. 软件复位
-    status = ST7789_WriteCommand(0x01); // SWRESET
+    status = WriteCommand(0x01); // SWRESET
     HAL_Delay(120);
     
     // 2. 睡眠模式关闭
-    status = ST7789_WriteCommand(0x11); // SLPOUT
+    status = WriteCommand(0x11); // SLPOUT
     HAL_Delay(120);
     
     // 3. 设置颜色模式
-    status = ST7789_WriteCommand(0x3A); // COLMOD
-    status = ST7789_WriteData_8bit(0x55); // 16位RGB565
+    status = WriteCommand(0x3A); // COLMOD
+    status = WriteData_8bit(0x55); // 16位RGB565
     
     // 4. 设置显示方向
-    status = ST7789_WriteCommand(0x36); // MADCTL
-    status = ST7789_WriteData_8bit(0x00); // 方向设置
+    status = WriteCommand(0x36); // MADCTL
+    status = WriteData_8bit(0x00); // 方向设置
     
     // 5. 设置帧率
-    status = ST7789_WriteCommand(0xB2); // PORCTRL
-    status = ST7789_WriteData_8bit(0x0C);
-    status = ST7789_WriteData_8bit(0x0C);
-    status = ST7789_WriteData_8bit(0x00);
-    status = ST7789_WriteData_8bit(0x33);
-    status = ST7789_WriteData_8bit(0x33);
+    status = WriteCommand(0xB2); // PORCTRL
+    status = WriteData_8bit(0x0C);
+    status = WriteData_8bit(0x0C);
+    status = WriteData_8bit(0x00);
+    status = WriteData_8bit(0x33);
+    status = WriteData_8bit(0x33);
     
     // 6. 门控制
-    status = ST7789_WriteCommand(0xB7); // GCTRL
-    status = ST7789_WriteData_8bit(0x35);
+    status = WriteCommand(0xB7); // GCTRL
+    status = WriteData_8bit(0x35);
     
     // 7. VCOMS设置
-    status = ST7789_WriteCommand(0xBB); // VCOMS
-    status = ST7789_WriteData_8bit(0x19);
+    status = WriteCommand(0xBB); // VCOMS
+    status = WriteData_8bit(0x19);
     
     // 8. LCM控制
-    status = ST7789_WriteCommand(0xC0); // LCMCTRL
-    status = ST7789_WriteData_8bit(0x2C);
+    status = WriteCommand(0xC0); // LCMCTRL
+    status = WriteData_8bit(0x2C);
     
     // 9. VDV和VRH命令使能
-    status = ST7789_WriteCommand(0xC2); // VDVVRHEN
-    status = ST7789_WriteData_8bit(0x01);
+    status = WriteCommand(0xC2); // VDVVRHEN
+    status = WriteData_8bit(0x01);
     
     // 10. VRH设置
-    status = ST7789_WriteCommand(0xC3); // VRHS
-    status = ST7789_WriteData_8bit(0x12);
+    status = WriteCommand(0xC3); // VRHS
+    status = WriteData_8bit(0x12);
     
     // 11. VDV设置
-    status = ST7789_WriteCommand(0xC4); // VDVS
-    status = ST7789_WriteData_8bit(0x20);
+    status = WriteCommand(0xC4); // VDVS
+    status = WriteData_8bit(0x20);
     
     // 12. 帧率控制
-    status = ST7789_WriteCommand(0xC6); // FRCTRL2
-    status = ST7789_WriteData_8bit(0x0F);
+    status = WriteCommand(0xC6); // FRCTRL2
+    status = WriteData_8bit(0x0F);
     
     // 13. 电源控制
-    status = ST7789_WriteCommand(0xD0); // PWCTRL1
-    status = ST7789_WriteData_8bit(0xA4);
-    status = ST7789_WriteData_8bit(0xA1);
+    status = WriteCommand(0xD0); // PWCTRL1
+    status = WriteData_8bit(0xA4);
+    status = WriteData_8bit(0xA1);
     
     // 14. 正极伽马校正
-    status = ST7789_WriteCommand(0xE0); // PVGAMCTRL
+    status = WriteCommand(0xE0); // PVGAMCTRL
     uint8_t pv_gamma[] = {0xD0, 0x04, 0x0D, 0x11, 0x13, 0x2B, 0x3F, 
                           0x54, 0x4C, 0x18, 0x0D, 0x0B, 0x1F, 0x23};
     for(int i = 0; i < 14; i++) {
-        status = ST7789_WriteData_8bit(pv_gamma[i]);
+        status = WriteData_8bit(pv_gamma[i]);
     }
     
     // 15. 负极伽马校正
-    status = ST7789_WriteCommand(0xE1); // NVGAMCTRL
+    status = WriteCommand(0xE1); // NVGAMCTRL
     uint8_t nv_gamma[] = {0xD0, 0x04, 0x0C, 0x11, 0x13, 0x2C, 0x3F,
                           0x44, 0x51, 0x2F, 0x1F, 0x1F, 0x20, 0x23};
     for(int i = 0; i < 14; i++) {
-        status = ST7789_WriteData_8bit(nv_gamma[i]);
+        status = WriteData_8bit(nv_gamma[i]);
     }
     
     // 16. 关闭反色显示
-    status = ST7789_WriteCommand(0x21); // INVON
+    status = WriteCommand(0x21); // INVON
     HAL_Delay(10);
     
     // 17. 打开显示
-    status = ST7789_WriteCommand(0x29); // DISPON
+    status = WriteCommand(0x29); // DISPON
     HAL_Delay(120);
     
     // 18. 设置显示方向（可选）
-    status = ST7789_WriteCommand(0x36); // MADCTL
-    status = ST7789_WriteData_8bit(0x70); // 根据需要调整方向
+    status = WriteCommand(0x36); // MADCTL
+    status = WriteData_8bit(0x70); // 根据需要调整方向
 
     return status;
 }
@@ -109,7 +111,7 @@ HAL_StatusTypeDef ST7789::LCD_Init(void)
   * @param  commands: 命令数组指针
   * @retval HAL状态
   */
-HAL_StatusTypeDef ST7789::ST7789_WriteCommand(uint8_t command)
+HAL_StatusTypeDef ST7789::WriteCommand(uint8_t command)
 {
    LCD_DC_Command;
    return HAL_SPI_Transmit(hspi, &command, 1, 1000);
@@ -121,7 +123,7 @@ HAL_StatusTypeDef ST7789::ST7789_WriteCommand(uint8_t command)
   * @param  len: 命令数量
   * @retval HAL状态
   */
-HAL_StatusTypeDef ST7789::ST7789_WriteCommands(uint8_t *commands, uint16_t len) {
+HAL_StatusTypeDef ST7789::WriteCommands(uint8_t *commands, uint16_t len) {
     // 显式类型转换解决编译错误
     uint8_t *buf = (uint8_t*)malloc(len);
     if (buf == NULL) return HAL_ERROR;
@@ -140,7 +142,7 @@ HAL_StatusTypeDef ST7789::ST7789_WriteCommands(uint8_t *commands, uint16_t len) 
   * @param  data: 数据
   * @retval HAL状态
   */
-HAL_StatusTypeDef ST7789::ST7789_WriteData_8bit(uint8_t data)
+HAL_StatusTypeDef ST7789::WriteData_8bit(uint8_t data)
 {
    LCD_DC_Data;
    return HAL_SPI_Transmit(hspi, &data, 1, 1000);
@@ -151,7 +153,7 @@ HAL_StatusTypeDef ST7789::ST7789_WriteData_8bit(uint8_t data)
   * @param  data: 数据
   * @retval HAL状态
   */
-HAL_StatusTypeDef ST7789::ST7789_WriteData_16bit(uint16_t data)
+HAL_StatusTypeDef ST7789::WriteData_16bit(uint16_t data)
 {
     uint8_t lcd_data_buff[2];
     LCD_DC_Data;
@@ -167,7 +169,7 @@ HAL_StatusTypeDef ST7789::ST7789_WriteData_16bit(uint16_t data)
   *	@param	Size: 数据大小
   * @retval HAL状态
   */
-HAL_StatusTypeDef ST7789::ST7789_SPI_Transmit(SPI_HandleTypeDef *hspi,uint16_t pData, uint32_t Size)
+HAL_StatusTypeDef ST7789::SPI_Transmit(SPI_HandleTypeDef *hspi, uint16_t pData, uint32_t Size)
 {
    uint32_t    tickstart;  
    uint32_t    Timeout = 1000;
@@ -237,12 +239,14 @@ HAL_StatusTypeDef ST7789::ST7789_SPI_Transmit(SPI_HandleTypeDef *hspi,uint16_t p
 		{
 			if ((hspi->TxXferCount > 1UL) && (hspi->Init.FifoThreshold > SPI_FIFO_THRESHOLD_01DATA))
 			{
-				*((__IO uint32_t *)&hspi->Instance->TXDR) = (uint32_t )LCD_pData_32bit;
+				// *((__IO uint32_t *)&hspi->Instance->TXDR) = (uint32_t)LCD_pData_32bit;
+        memcpy((void*)&hspi->Instance->TXDR, &LCD_pData_32bit, sizeof(LCD_pData_32bit));
 				LCD_TxDataCount -= (uint16_t)2UL;
 			}
 			else
 			{
-				*((__IO uint16_t *)&hspi->Instance->TXDR) =  (uint16_t )pData;
+				// *((__IO uint16_t *)&hspi->Instance->TXDR) = (uint16_t)pData;
+        memcpy((void*)&hspi->Instance->TXDR, &pData, sizeof(pData));
 				LCD_TxDataCount--;
 			}
 		}
@@ -252,7 +256,7 @@ HAL_StatusTypeDef ST7789::ST7789_SPI_Transmit(SPI_HandleTypeDef *hspi,uint16_t p
 			if ((((HAL_GetTick() - tickstart) >=  Timeout) && (Timeout != HAL_MAX_DELAY)) || (Timeout == 0U))
 			{
 				/* Call standard close procedure with error check */
-				ST7789_SPI_CloseTransfer(hspi);
+				SPI_CloseTransfer(hspi);
 
 				/* Process Unlocked */
 				__HAL_UNLOCK(hspi);
@@ -264,18 +268,18 @@ HAL_StatusTypeDef ST7789::ST7789_SPI_Transmit(SPI_HandleTypeDef *hspi,uint16_t p
 		}
 	}
 
-	if (ST7789_SPI_WaitOnFlagUntilTimeout(hspi, SPI_SR_TXC, RESET, tickstart, Timeout) != HAL_OK)
+	if (SPI_WaitOnFlagUntilTimeout(hspi, SPI_SR_TXC, RESET, tickstart, Timeout) != HAL_OK)
 	{
 		SET_BIT(hspi->ErrorCode, HAL_SPI_ERROR_FLAG);
 	}
 
 	SET_BIT((hspi)->Instance->CR1 , SPI_CR1_CSUSP);
 	/* µÈ´ýSPI¹ÒÆð */
-	if (ST7789_SPI_WaitOnFlagUntilTimeout(hspi, SPI_FLAG_SUSP, RESET, tickstart, Timeout) != HAL_OK)
+	if (SPI_WaitOnFlagUntilTimeout(hspi, SPI_FLAG_SUSP, RESET, tickstart, Timeout) != HAL_OK)
 	{
 		SET_BIT(hspi->ErrorCode, HAL_SPI_ERROR_FLAG);
 	}
-	ST7789_SPI_CloseTransfer(hspi);   /* Call standard close procedure with error check */
+	SPI_CloseTransfer(hspi);   /* Call standard close procedure with error check */
 
 	SET_BIT((hspi)->Instance->IFCR , SPI_IFCR_SUSPC);
 
@@ -298,7 +302,7 @@ HAL_StatusTypeDef ST7789::ST7789_SPI_Transmit(SPI_HandleTypeDef *hspi,uint16_t p
   * @param  pData: 缓冲区域指针
   * @param	Size: 缓冲区长度
   */
-HAL_StatusTypeDef ST7789::ST7789_SPI_TransmitBuffer (SPI_HandleTypeDef *hspi, uint16_t *pData, uint32_t Size)
+HAL_StatusTypeDef ST7789::SPI_TransmitBuffer (SPI_HandleTypeDef *hspi, uint16_t *pData, uint32_t Size)
 {
    uint32_t    tickstart;  
    uint32_t    Timeout = 1000;
@@ -366,13 +370,15 @@ HAL_StatusTypeDef ST7789::ST7789_SPI_TransmitBuffer (SPI_HandleTypeDef *hspi, ui
 		{
 			if ((LCD_TxDataCount > 1UL) && (hspi->Init.FifoThreshold > SPI_FIFO_THRESHOLD_01DATA))
 			{
-				*((__IO uint32_t *)&hspi->Instance->TXDR) = *((uint32_t *)pData);
+				// *((__IO uint32_t *)&hspi->Instance->TXDR) = *((uint32_t *)pData);
+        memcpy((void*)&hspi->Instance->TXDR, (uint32_t *)pData, sizeof(pData));
 				pData += 2;
 				LCD_TxDataCount -= 2;
 			}
 			else
 			{
-				*((__IO uint16_t *)&hspi->Instance->TXDR) = *((uint16_t *)pData);
+				// *((__IO uint16_t *)&hspi->Instance->TXDR) = *((uint16_t *)pData);
+        memcpy((void*)&hspi->Instance->TXDR, &pData, sizeof(pData));
 				pData += 1;
 				LCD_TxDataCount--;
 			}
@@ -383,7 +389,7 @@ HAL_StatusTypeDef ST7789::ST7789_SPI_TransmitBuffer (SPI_HandleTypeDef *hspi, ui
 			if ((((HAL_GetTick() - tickstart) >=  Timeout) && (Timeout != HAL_MAX_DELAY)) || (Timeout == 0U))
 			{
 				/* Call standard close procedure with error check */
-				ST7789_SPI_CloseTransfer(hspi);
+				SPI_CloseTransfer(hspi);
 
 				/* Process Unlocked */
 				__HAL_UNLOCK(hspi);
@@ -395,17 +401,17 @@ HAL_StatusTypeDef ST7789::ST7789_SPI_TransmitBuffer (SPI_HandleTypeDef *hspi, ui
 		}
 	}
 
-	if (ST7789_SPI_WaitOnFlagUntilTimeout(hspi, SPI_SR_TXC, RESET, tickstart, Timeout) != HAL_OK)
+	if (SPI_WaitOnFlagUntilTimeout(hspi, SPI_SR_TXC, RESET, tickstart, Timeout) != HAL_OK)
 	{
 		SET_BIT(hspi->ErrorCode, HAL_SPI_ERROR_FLAG);
 	}
 
 	SET_BIT((hspi)->Instance->CR1 , SPI_CR1_CSUSP);
-	if (ST7789_SPI_WaitOnFlagUntilTimeout(hspi, SPI_FLAG_SUSP, RESET, tickstart, Timeout) != HAL_OK)
+	if (SPI_WaitOnFlagUntilTimeout(hspi, SPI_FLAG_SUSP, RESET, tickstart, Timeout) != HAL_OK)
 	{
 		SET_BIT(hspi->ErrorCode, HAL_SPI_ERROR_FLAG);
 	}
-	ST7789_SPI_CloseTransfer(hspi);   /* Call standard close procedure with error check */
+	SPI_CloseTransfer(hspi);   /* Call standard close procedure with error check */
 
 	SET_BIT((hspi)->Instance->IFCR , SPI_IFCR_SUSPC);
 
@@ -431,7 +437,7 @@ HAL_StatusTypeDef ST7789::ST7789_SPI_TransmitBuffer (SPI_HandleTypeDef *hspi, ui
   *	@param	Timeout: 超时时间
   * @retval	HAL状态
 */
-HAL_StatusTypeDef ST7789::ST7789_SPI_WaitOnFlagUntilTimeout(SPI_HandleTypeDef *hspi, uint32_t Flag, FlagStatus Status,
+HAL_StatusTypeDef ST7789::SPI_WaitOnFlagUntilTimeout(SPI_HandleTypeDef *hspi, uint32_t Flag, FlagStatus Status,
                                                     uint32_t Tickstart, uint32_t Timeout)
 {
    /* Wait until flag is set */
@@ -450,7 +456,7 @@ HAL_StatusTypeDef ST7789::ST7789_SPI_WaitOnFlagUntilTimeout(SPI_HandleTypeDef *h
   * @brief	关闭ST7789的SPI发送
   *	@param	hspi: SPI句柄
 */
-void ST7789::ST7789_SPI_CloseTransfer(SPI_HandleTypeDef *hspi)
+void ST7789::SPI_CloseTransfer(SPI_HandleTypeDef *hspi)
 {
   uint32_t itflag = hspi->Instance->SR;
 
@@ -509,7 +515,7 @@ void ST7789::ST7789_SPI_CloseTransfer(SPI_HandleTypeDef *hspi)
   * @param	DataBuff: 数据缓冲区地址
   * @param	DataSize: 数据缓冲区长度
 */
-void ST7789::ST7789_WriteBuff(uint16_t *DataBuff, uint16_t DataSize)
+void ST7789::WriteBuff(uint16_t *DataBuff, uint16_t DataSize)
 {
 	LCD_DC_Data;
     hspi->Init.DataSize = SPI_DATASIZE_16BIT;
@@ -528,24 +534,24 @@ void ST7789::ST7789_WriteBuff(uint16_t *DataBuff, uint16_t DataSize)
   * @param	x2:	X坐标结束点
   * @param	y2:	Y坐标结束点
 */
-void ST7789::ST7789_SetAddress(uint16_t x1,uint16_t y1,uint16_t x2,uint16_t y2)		
+void ST7789::SetAddress(uint16_t x1,uint16_t y1,uint16_t x2,uint16_t y2)		
 {
-	ST7789_WriteCommand(0x2a);
-	ST7789_WriteData_16bit(x1);
-	ST7789_WriteData_16bit(x2);
+	WriteCommand(0x2a);
+	WriteData_16bit(x1);
+	WriteData_16bit(x2);
 
-	ST7789_WriteCommand(0x2b);
-	ST7789_WriteData_16bit(y1);
-	ST7789_WriteData_16bit(y2);
+	WriteCommand(0x2b);
+	WriteData_16bit(y1);
+	WriteData_16bit(y2);
 
-	ST7789_WriteCommand(0x2c);
+	WriteCommand(0x2c);
 }
 
 /**
   * @brief	设置ST7789的颜色
   *	@param	Color: 目标颜色
 */
-void ST7789::ST7789_SetColor(uint32_t Color)
+void ST7789::SetColor(uint32_t Color)
 {
 	uint16_t Red_Value = 0, Green_Value = 0, Blue_Value = 0;
 	Red_Value   = (uint16_t)((Color&0x00F80000)>>8);
@@ -558,7 +564,7 @@ void ST7789::ST7789_SetColor(uint32_t Color)
   * @brief	设置ST7789的背景颜色
   *	@param	Color: 目标背景颜色
 */
-void ST7789::ST7789_SetBackColor(uint32_t Color)
+void ST7789::SetBackColor(uint32_t Color)
 {
 	uint16_t Red_Value = 0, Green_Value = 0, Blue_Value = 0;
 	Red_Value   = (uint16_t)((Color&0x00F80000)>>8);
@@ -570,15 +576,15 @@ void ST7789::ST7789_SetBackColor(uint32_t Color)
 /**
   * @brief	清空ST7789显示的内容
 */
-void ST7789::ST7789_Clear(void)
+void ST7789::Clear(void)
 {
-	ST7789_SetAddress(0,0,320-1,240-1);
+	SetAddress(0,0,320-1,240-1);
 	
 	LCD_DC_Data;	
 	hspi->Init.DataSize = SPI_DATASIZE_16BIT;
 	HAL_SPI_Init(hspi);		
 	
-	ST7789_SPI_Transmit(hspi, BackColor, 320 * 240);
+	SPI_Transmit(hspi, BackColor, 320 * 240);
 
 	hspi->Init.DataSize = SPI_DATASIZE_8BIT;
 	HAL_SPI_Init(hspi);
@@ -591,13 +597,13 @@ void ST7789::ST7789_Clear(void)
   *	@param	width: 目标矩形的宽度
   * @param	height:	目标矩形的高度
 */
-void ST7789::ST7789_FillRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height)
+void ST7789::FillRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height)
 {
-  	ST7789_SetAddress( x, y, x+width-1, y+height-1);
+  	SetAddress( x, y, x+width-1, y+height-1);
 	LCD_DC_Data;
   	hspi->Init.DataSize = SPI_DATASIZE_16BIT;
   	HAL_SPI_Init(hspi);
-  	ST7789_SPI_Transmit(hspi, ForgColor, width*height);
+  	SPI_Transmit(hspi, ForgColor, width*height);
 	// printf("%x\n",ForgColor);
 
 	hspi->Init.DataSize = SPI_DATASIZE_8BIT;
@@ -612,7 +618,7 @@ void ST7789::ST7789_FillRect(uint16_t x, uint16_t y, uint16_t width, uint16_t he
   * @param	height:	目标图像的高度
   *	@param	pImage: 目标图像的数组
 */
-void ST7789::ST7789_DrawImage(uint16_t x,uint16_t y,uint16_t width,uint16_t height,const uint8_t *pImage)
+void ST7789::DrawImage(uint16_t x,uint16_t y,uint16_t width,uint16_t height,const uint8_t *pImage)
 {  
    uint8_t   disChar;
    uint16_t  Xaddress = x;
@@ -621,7 +627,7 @@ void ST7789::ST7789_DrawImage(uint16_t x,uint16_t y,uint16_t width,uint16_t heig
    uint16_t  BuffCount = 0;
    uint16_t  Buff_Height = 0;
 
-   Buff_Height = (sizeof(LCD_Buff)/2) / height;
+   Buff_Height = (sizeof(ST7789_Display_Buffer)/2) / height;
 
 	for(i = 0; i <height; i++)
 	{
@@ -633,11 +639,11 @@ void ST7789::ST7789_DrawImage(uint16_t x,uint16_t y,uint16_t width,uint16_t heig
 			{ 
 				if(disChar & 0x01)	
 				{		
-            		LCD_Buff[BuffCount] =  ForgColor;
+            		ST7789_Display_Buffer[BuffCount] =  ForgColor;
 				}
 				else		
 				{		
-					LCD_Buff[BuffCount] = BackColor;
+					ST7789_Display_Buffer[BuffCount] = BackColor;
 				}
 				disChar >>= 1;
 				Xaddress++;
@@ -653,15 +659,15 @@ void ST7789::ST7789_DrawImage(uint16_t x,uint16_t y,uint16_t width,uint16_t heig
       if( BuffCount == Buff_Height*width)
       {
          BuffCount = 0;
-         ST7789_SetAddress( x, Yaddress , x+width-1, Yaddress+Buff_Height-1);
-         ST7789_WriteBuff(LCD_Buff,width*Buff_Height);
+         SetAddress( x, Yaddress , x+width-1, Yaddress+Buff_Height-1);
+         WriteBuff(ST7789_Display_Buffer,width*Buff_Height);
 
          Yaddress = Yaddress+Buff_Height;
       }     
       if( (i+1)== height )
       {
-         ST7789_SetAddress( x, Yaddress , x+width-1,i+y);
-         ST7789_WriteBuff(LCD_Buff,width*(i+1+y-Yaddress)); 
+         SetAddress( x, Yaddress , x+width-1,i+y);
+         WriteBuff(ST7789_Display_Buffer,width*(i+1+y-Yaddress)); 
       }
 	}	
 }
@@ -675,17 +681,143 @@ void ST7789::ST7789_DrawImage(uint16_t x,uint16_t y,uint16_t width,uint16_t heig
   *	@param	DataBuff: 目标缓冲区的地址
   * @note	把缓冲区指向你的全彩图像数组地址即可显示全彩图像
 */
-void ST7789::ST7789_CopyBuffer(uint16_t x, uint16_t y,uint16_t width,uint16_t height,uint16_t *DataBuff)
+void ST7789::CopyBuffer(uint16_t x, uint16_t y,uint16_t width,uint16_t height,uint16_t *DataBuff)
 {
-	ST7789_SetAddress(x,y,x+width-1,y+height-1);
+	SetAddress(x,y,x+width-1,y+height-1);
 
 	LCD_DC_Data;
     hspi->Init.DataSize = SPI_DATASIZE_16BIT;
     HAL_SPI_Init(hspi);		
 	
-	ST7789_SPI_TransmitBuffer(hspi, DataBuff,width * height) ;
+	SPI_TransmitBuffer(hspi, DataBuff,width * height) ;
 	
 //	HAL_SPI_Transmit(&hspi5, (uint8_t *)DataBuff, (x2-x1+1) * (y2-y1+1), 1000) ;
     hspi->Init.DataSize = SPI_DATASIZE_8BIT;
     HAL_SPI_Init(hspi);		
+}
+
+/**
+  * @brief  绘制一个字符到ST7789屏幕
+  * @param  x: X坐标 (0-239)
+  * @param  y: Y坐标 (0-319) 
+  * @param  ch: 要绘制的字符
+  * @param  color: 字符颜色 (16位RGB565)
+  * @param  bg_color: 背景颜色 (16位RGB565)
+  */
+void ST7789::DrawChar(uint16_t x, uint16_t y, char ch)
+{
+    // 只处理可打印字符
+    if (ch < 32 || ch > 127) return;
+    
+    // 检查边界
+    if (x >= LCD_WIDTH || y >= LCD_HEIGHT) return;
+    if (x + 8 > LCD_WIDTH || y + 16 > LCD_HEIGHT) return;
+    
+    // 获取字符在字体数组中的位置
+    uint16_t c = (ch - 32) * 16, i = 0; // 每个字符16字节
+    
+    LCD_DC_Data;
+    
+    // 切换到16位模式
+    // hspi->Init.DataSize = SPI_DATASIZE_16BIT;
+    // HAL_SPI_Init(hspi);
+    
+    // 根据取模设置：阴码、逐行式、取模走向顺向(高位在前)
+    for (uint8_t row = 0; row < 16; row++) {
+        uint8_t line = ascii_font_8x16[c + row]; // 获取当前行的像素数据
+        
+        // 逐位检查并绘制像素 (高位在前)
+        for (uint8_t col = 0; col < 8; col++) {
+            // 阴码：1表示点亮像素
+            // 取模走向顺向：最高位对应最左边的像素
+            if (line & (1 << (7 - col))) {
+                // 发送前景色
+                // WriteData_16bit(color);
+				ST7789_Display_Buffer[i] = ForgColor;
+            } else {
+                // 发送背景色
+                // WriteData_16bit(bg_color);
+				ST7789_Display_Buffer[i] = BackColor;
+            }
+			i++;
+        }
+    }
+
+	// 设置字符显示区域
+    SetAddress(x, y, x + 7, y + 15);
+	WriteBuff(ST7789_Display_Buffer, 8*16);
+    
+    // 切换回8位模式
+    // hspi->Init.DataSize = SPI_DATASIZE_8BIT;
+    // HAL_SPI_Init(hspi);
+}
+
+/**
+  * @brief  绘制字符串到ST7789屏幕
+  * @param  x: 起始X坐标 (0-239)
+  * @param  y: 起始Y坐标 (0-319)
+  * @param  str: 要绘制的字符串
+  */
+void ST7789::DrawString(uint16_t x, uint16_t y, const char* str)
+{
+    uint16_t pos_x = x;
+    uint16_t pos_y = y;
+    
+    while (*str) {
+        // 处理换行符
+        if (*str == '\n') {
+            pos_x = x;
+            pos_y += 16;
+            str++;
+            continue;
+        }
+        
+        // 检查是否超出屏幕右边界
+        if (pos_x + 8 > LCD_WIDTH) {
+            pos_x = x;
+            pos_y += 16;
+            
+            // 检查是否超出屏幕下边界
+            if (pos_y + 16 > LCD_HEIGHT) break;
+        }
+        
+        // 绘制字符
+        DrawChar(pos_x, pos_y, *str);
+        
+        pos_x += 8; // 移动到下一个字符位置
+        str++;
+    }
+}
+
+/**
+  * @brief  绘制字符串到ST7789屏幕
+  * @param  x: 起始X坐标 (0-239)
+  * @param  y: 起始Y坐标 (0-319)
+  * @param  str: 要绘制的字符串
+*/
+void ST7789::DrawNumber(uint8_t x, uint8_t y, int32_t num)
+{
+    char buffer[12];
+    snprintf(buffer, sizeof(buffer), "%ld", (long)num);
+    DrawString(x, y, buffer);
+}
+
+/**
+  * @brief  绘制浮点数
+  * @param  x: X坐标
+  * @param  y: Y坐标
+  * @param  num: 要绘制的浮点数
+  * @param  decimals: 小数位数
+  */
+void ST7789::DrawFloat(uint16_t x, uint16_t y, float decimals, uint8_t len, uint8_t decs)
+{
+    char buffer[20];
+    
+    #if USE_DECIMALS_DISPLAY_FILL_ZERO
+    snprintf(buffer, sizeof(buffer), "%0*.*lf", len, decs, decimals);
+    #else
+    snprintf(buffer, sizeof(buffer), "%*.*lf", len, decs, decimals);
+    #endif
+    
+    DrawString(x, y, buffer);
 }

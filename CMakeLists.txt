@@ -11,7 +11,7 @@ cmake_minimum_required(VERSION 3.22)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS ON)
-
+set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} -u _printf_float -u _scanf_float")
 
 # Define the build type
 if(NOT CMAKE_BUILD_TYPE)
@@ -48,6 +48,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Src/AkieImage.c
     Core/Src/ssd1306.cpp
     Core/Src/st7789.cpp
+    Core/Src/display_font.c
 )
 
 # Add include paths

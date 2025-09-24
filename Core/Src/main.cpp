@@ -66,7 +66,7 @@ char mSerialReciveBuffer[ReciveSize] = {0};
 void SystemClock_Config(void);
 static void MPU_Config(void);
 /* USER CODE BEGIN PFP */
-void mProcess_SerialReciveData(char* data, uint16_t Size);
+void mProcess_SerialReceiveData(char* data, uint16_t Size);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -122,35 +122,45 @@ int main(void)
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
   // SPI_LCD_Init();
-  spiScreen.LCD_Init();
+  spiScreen.Init();
   LCD_Backlight_ON;
-  spiScreen.ST7789_SetColor(0xFF2070CF);
-  spiScreen.ST7789_SetBackColor(0xFF000000);
-  spiScreen.ST7789_Clear();
-  spiScreen.ST7789_FillRect(10, 10, 100, 100);
-  spiScreen.ST7789_SetColor(0xFFFF0000);
-  spiScreen.ST7789_FillRect(50, 50, 100, 100);
-  spiScreen.ST7789_SetColor(0xFF00FF00);
-  spiScreen.ST7789_FillRect(90, 90, 100, 100);
-  spiScreen.ST7789_SetColor(0xFF0000FF);
-  spiScreen.ST7789_FillRect(130, 130, 100, 100);
+  spiScreen.SetColor(0xFF2070CF);
+  spiScreen.SetBackColor(0xFF000000);
+  spiScreen.Clear();
+  spiScreen.FillRect(10, 10, 100, 100);
+  spiScreen.SetColor(0xFFFF0000);
+  spiScreen.FillRect(50, 50, 100, 100);
+  spiScreen.SetColor(0xFF00FF00);
+  spiScreen.FillRect(90, 90, 100, 100);
+  spiScreen.SetColor(0xFF0000FF);
+  spiScreen.FillRect(130, 130, 100, 100);
   printf("\033[35mThis is a run in QSPI Flash`s Application, Execute method is XIP\n\033[31mCall \"resetMem\"to clean usart1 recive memory, \"Exit\" to exit Application\033[0m\n");
-  spiScreen.ST7789_SetColor(0xFFFFFFFF);
-  spiScreen.ST7789_CopyBuffer(10, 10, 128, 128, (uint16_t*)gImage_Akie000);
-  spiScreen.ST7789_CopyBuffer(148, 10, 128, 128, (uint16_t*)gImage_Akie001);
-  i2cScreen.SSD1306_Init();
-  i2cScreen.SSD1306_ClearBuffer();
-  i2cScreen.SSD1306_DrawRect(20, 20, 32, 32, 1);
-  i2cScreen.SSD1306_FillRect(112, 48, 16, 16, 1);
-  i2cScreen.SSD1306_DrawString(0, 0, "Akie~", 1);
-  i2cScreen.SSD1306_DrawString(0, 20, "Happy Birthday", 1);
-  i2cScreen.SSD1306_UpdateScreen();
-  // TIM17_Delay_Ms(2000);
-  // ST7789_CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie002);
-  // TIM17_Delay_Ms(2000);
-  // ST7789_CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie003);
+  spiScreen.SetColor(0xFF00FFFF);
+  spiScreen.CopyBuffer(10, 10, 128, 128, (uint16_t*)gImage_Akie000);
+  spiScreen.CopyBuffer(148, 10, 128, 128, (uint16_t*)gImage_Akie001);
+  i2cScreen.Init();
+  i2cScreen.ClearBuffer();
+  i2cScreen.DrawRect(20, 20, 32, 32, 1);
+  i2cScreen.FillRect(64, 30, 32, 32, 1);
+  i2cScreen.UpdateScreen();
   TIM17_Delay_Ms(2000);
-  spiScreen.ST7789_CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie006);
+  i2cScreen.ClearBuffer();
+  i2cScreen.UpdateScreen();
+  TIM17_Delay_Ms(100);
+  i2cScreen.DrawString(0, 0, "Akie~", 1);
+  i2cScreen.DrawString(0, 16, "Happy Birthday", 1);
+  i2cScreen.DrawNumber(0, 32, 20160126, 1);
+  i2cScreen.DrawFloat(0, 48, 0.767f, 5, 3, 1);
+  i2cScreen.UpdateScreen();
+  TIM17_Delay_Ms(2000);
+  spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie002);
+  TIM17_Delay_Ms(2000);
+  spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie003);
+  TIM17_Delay_Ms(2000);
+  spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie006);
+  spiScreen.DrawString(0, 0, "gImage_Akie006");
+  spiScreen.DrawNumber(0, 16, 123);
+  spiScreen.DrawFloat(0, 32, 10.345, 8, 4);
   // HAL_UART_Receive_IT(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
   // HAL_UART_Receive_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
   memset(mSerialReciveBuffer, 0xff, ReciveSize);
@@ -238,11 +248,11 @@ void SystemClock_Config(void)
 //   {
 //     if(strncmp(mSerialReciveBuffer, "gImage_Akie002", ReciveSize) == 0)
 //     {
-//       ST7789_CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie002);
+//       CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie002);
 //     }
 //     else if (strncmp(mSerialReciveBuffer, "gImage_Akie003", ReciveSize) == 0) 
 //     {
-//       ST7789_CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie003);
+//       CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie003);
 //     }
 //     else {
 //       HAL_UART_Transmit_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
@@ -258,33 +268,33 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
   if(huart->Instance == USART1)
   {
     // HAL_UART_Transmit_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, Size);
-    mProcess_SerialReciveData(mSerialReciveBuffer, Size);
+    mProcess_SerialReceiveData(mSerialReciveBuffer, Size);
     __HAL_DMA_DISABLE_IT(&hdma_usart1_rx, DMA_IT_HT);
     HAL_UARTEx_ReceiveToIdle_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
   }
 }
 
-void mProcess_SerialReciveData(char* data, uint16_t Size)
+void mProcess_SerialReceiveData(char* data, uint16_t Size)
 {
   if(strncmp(data, "gImage_Akie002", Size) == 0)
     {
-      spiScreen.ST7789_CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie002);
+      spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie002);
     }
   else if (strncmp(data, "gImage_Akie003", Size) == 0)
     {
-      spiScreen.ST7789_CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie003);
+      spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie003);
     }
   else if(strncmp(data, "gImage_Akie004", Size) == 0)
     {
-      spiScreen.ST7789_CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie004);
+      spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie004);
     }
   else if (strncmp(data, "gImage_Akie005", Size) == 0)
     {
-      spiScreen.ST7789_CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie005);
+      spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie005);
     }
   else if (strncmp(data, "gImage_Akie006", Size) == 0)
     {
-      spiScreen.ST7789_CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie006);
+      spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie006);
     }
   else if (strncmp(data, "resetMem", Size) == 0) {
       memset(mSerialReciveBuffer, 255, ReciveSize);

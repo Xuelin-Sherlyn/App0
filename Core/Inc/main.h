@@ -61,6 +61,8 @@ void Error_Handler(void);
 #define LED_GPIO_Port GPIOC
 
 /* USER CODE BEGIN Private defines */
+#define USE_DECIMALS_DISPLAY_FILL_ZERO 1
+
 #define LCD_Backlight_PIN GPIO_PIN_6
 #define LCD_DC_PIN GPIO_PIN_12
 #define	LCD_Backlight_PORT GPIOH
