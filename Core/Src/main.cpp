@@ -58,9 +58,9 @@
 SSD1306 i2cScreen(&hi2c1);
 ST7789 spiScreen(&hspi6);
 
-uint8_t val = 1;
+volatile uint8_t val = 0;
 __attribute__((section(".ram_d1"))) 
-char mSerialReciveBuffer[ReciveSize] = {0};
+volatile char mSerialReciveBuffer[ReciveSize] = {0};
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -122,7 +122,12 @@ int main(void)
   MX_SPI6_Init();
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
-  // SPI_LCD_Init();
+  memset((uint8_t*)mSerialReciveBuffer, 0xff, ReciveSize);
+  __HAL_DMA_DISABLE_IT(&hdma_usart1_rx, DMA_IT_HT);
+  HAL_UARTEx_ReceiveToIdle_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
+  printf("\033[35mThis is a run in QSPI Flash`s Application, Execute method is XIP\n\033[31mCall \"resetMem\"to clean usart1 recive memory, \"Exit\" to exit Application\033[0m\n");
+
+  i2cScreen.Init();
   spiScreen.Init();
   LCD_Backlight_ON;
   spiScreen.SetColor(0xFF2070CF);
@@ -135,11 +140,9 @@ int main(void)
   spiScreen.FillRect(90, 90, 100, 100);
   spiScreen.SetColor(0xFF0000FF);
   spiScreen.FillRect(130, 130, 100, 100);
-  printf("\033[35mThis is a run in QSPI Flash`s Application, Execute method is XIP\n\033[31mCall \"resetMem\"to clean usart1 recive memory, \"Exit\" to exit Application\033[0m\n");
   spiScreen.SetColor(0xFF00FFFF);
   spiScreen.CopyBuffer(10, 10, 128, 128, (uint16_t*)gImage_Akie000);
   spiScreen.CopyBuffer(148, 10, 128, 128, (uint16_t*)gImage_Akie001);
-  i2cScreen.Init();
   i2cScreen.ClearBuffer();
   i2cScreen.DrawRect(20, 20, 32, 32, 1);
   i2cScreen.FillRect(64, 30, 32, 32, 1);
@@ -165,19 +168,18 @@ int main(void)
   spiScreen.DrawFloat(0, 32, 10.345, 8, 4);
   // HAL_UART_Receive_IT(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
   // HAL_UART_Receive_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
-  memset(mSerialReciveBuffer, 0xff, ReciveSize);
-  __HAL_DMA_DISABLE_IT(&hdma_usart1_rx, DMA_IT_HT);
-  HAL_UARTEx_ReceiveToIdle_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (val)
+  while (1)
   {
     // HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
     // for循环大概一个时钟周期，但该用TIM还得用TIM，HAL_Delay这玩意阻塞的
     // for (volatile int i = 0; i < 48000000; i++);
     // TIM17_Delay_Ms(1000);
+    if(val == 1)
+    break;
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -270,23 +272,16 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
   if(huart->Instance == USART1)
   {
     // HAL_UART_Transmit_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, Size);
-    mProcess_SerialReceiveData(mSerialReciveBuffer, Size);
+    mProcess_SerialReceiveData((char*)mSerialReciveBuffer, Size);
     __HAL_DMA_DISABLE_IT(&hdma_usart1_rx, DMA_IT_HT);
     HAL_UARTEx_ReceiveToIdle_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
   }
 }
 
+//经过测试，指令只有在非优化或优化等级1才能用，优化等级过高会将这玩意优化掉
 void mProcess_SerialReceiveData(char* data, uint16_t Size)
 {
-  if(strncmp(data, "gImage_Akie002", Size) == 0)
-    {
-      spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie002);
-    }
-  else if (strncmp(data, "gImage_Akie003", Size) == 0)
-    {
-      spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie003);
-    }
-  else if(strncmp(data, "gImage_Akie004", Size) == 0)
+  if(strncmp(data, "gImage_Akie004", Size) == 0)
     {
       spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie004);
     }
@@ -294,12 +289,20 @@ void mProcess_SerialReceiveData(char* data, uint16_t Size)
     {
       spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie005);
     }
-  else if (strncmp(data, "gImage_Akie006", Size) == 0)
+  else if(strncmp(data, "gImage_Akie006", Size) == 0)
     {
       spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie006);
     }
+  else if (strncmp(data, "gImage_Akie007", Size) == 0)
+    {
+      spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie007);
+    }
+  else if (strncmp(data, "gImage_Akie008", Size) == 0)
+    {
+      spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie008);
+    }
   else if (strncmp(data, "resetMem", Size) == 0) {
-      memset(mSerialReciveBuffer, 255, ReciveSize);
+      memset((uint8_t*)mSerialReciveBuffer, 255, ReciveSize);
     }
   else if (strncmp(data, "Exit", Size) == 0) {
       HAL_UART_Transmit_DMA(&huart1, (uint8_t*)"Application Exit\n", 18);
@@ -315,7 +318,7 @@ void mProcess_SerialReceiveData(char* data, uint16_t Size)
       __HAL_RCC_USART1_RELEASE_RESET();
       __HAL_RCC_DMA1_RELEASE_RESET();
       __disable_irq();
-      val = 0;
+      val = 1;
     }
   else {
       HAL_UART_Transmit_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, Size);
