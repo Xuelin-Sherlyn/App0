@@ -132,6 +132,7 @@ int main(void)
   spiScreen.Init();
   i2cScreen.SetFont(&ASCII_8x16);
   spiScreen.SetFont(&ASCII_10x20);
+  spiScreen.SetFont(&Chinese_16x16);
   LCD_Backlight_ON;
   spiScreen.SetColor(0xFF2070CF);
   spiScreen.SetBackColor(0xFF000000);
@@ -169,6 +170,7 @@ int main(void)
   spiScreen.DrawString(0, 0, "gImage_Akie006");
   spiScreen.DrawNumber(0, 20, 123);
   spiScreen.DrawFloat(0, 40, 10.345, 8, 4);
+  spiScreen.DrawChineseString(0, 60, "Akie秋绘");
   // HAL_UART_Receive_IT(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
   // HAL_UART_Receive_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
   /* USER CODE END 2 */

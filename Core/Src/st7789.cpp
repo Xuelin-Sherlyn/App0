@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <stdio.h>
 #include <string.h>
+#include "math.h"
 
 ST7789::ST7789(SPI_HandleTypeDef* hspiHandle) : hspi(hspiHandle){}
 
@@ -586,6 +587,7 @@ void ST7789::SetFont(pFONT *font)
 
     // Chinese Font
     case FONT_TYPE_GBK:
+    Chinese_Font = font;
     break;
   }
 }
@@ -718,11 +720,10 @@ void ST7789::CopyBuffer(uint16_t x, uint16_t y,uint16_t width,uint16_t height,ui
   * @param  x: X坐标 (0-239)
   * @param  y: Y坐标 (0-319) 
   * @param  ch: 要绘制的字符
-  * @param  color: 字符颜色 (16位RGB565)
-  * @param  bg_color: 背景颜色 (16位RGB565)
   */
 void ST7789::DrawChar(uint16_t x, uint16_t y, char ch)
 {
+  if (ASCII_Font == nullptr || ch == 0) return;
     // 检查边界
     if (x >= LCD_WIDTH || y >= LCD_HEIGHT) return;
     if (x + ASCII_Font->Width > LCD_WIDTH || y + ASCII_Font->Height > LCD_HEIGHT) return;
@@ -773,6 +774,7 @@ void ST7789::DrawChar(uint16_t x, uint16_t y, char ch)
   */
 void ST7789::DrawString(uint16_t x, uint16_t y, const char* str)
 {
+  if (ASCII_Font == nullptr || str == nullptr) return;
     uint16_t pos_x = x;
     uint16_t pos_y = y;
     
@@ -833,4 +835,110 @@ void ST7789::DrawFloat(uint16_t x, uint16_t y, float decimals, uint8_t len, uint
     #endif
     
     DrawString(x, y, buffer);
+}
+
+// 中文绘制函数
+void ST7789::DrawChineseChar(uint16_t x, uint16_t y, const char* ch)
+{
+    if (Chinese_Font == nullptr || ch == nullptr) return;
+    
+    // 检查边界
+    if (x >= LCD_WIDTH || y >= LCD_HEIGHT) return;
+    if (x + Chinese_Font->Width > LCD_WIDTH || y + Chinese_Font->Height > LCD_HEIGHT) return;
+    
+    // 计算字符在字体数组中的偏移量
+    // 假设中文字符按GB2312顺序排列，使用二维数组索引
+    uint8_t high_byte = (uint8_t)ch[0];
+    uint8_t low_byte = (uint8_t)ch[1];
+    
+    // GB2312编码范围：高字节0xA1-0xF7，低字节0xA1-0xFE
+    if (high_byte < 0xA1 || high_byte > 0xF7 || low_byte < 0xA1 || low_byte > 0xFE) {
+        return; // 非GB2312编码
+    }
+    
+    // 计算字符索引
+    uint16_t zone = high_byte - 0xA1;      // 区码 (0-86)
+    uint16_t pos = low_byte - 0xA1;        // 位码 (0-93)
+    uint16_t char_index = zone * 94 + pos; // 总索引 (0-86*94=8084)
+    
+    // 计算字符在字体数组中的偏移量
+    uint16_t char_offset = char_index * Chinese_Font->Sizes;
+    
+    // 计算每行需要的字节数
+    uint8_t bytes_per_row = (Chinese_Font->Width + 7) / 8;
+    
+    LCD_DC_Data;
+    uint16_t i = 0;
+    
+    // 绘制字符（阴码、逐行式、高位在前）
+    for (uint8_t row = 0; row < Chinese_Font->Height; row++) {
+        for (uint8_t byte_idx = 0; byte_idx < bytes_per_row; byte_idx++) {
+            uint8_t line_byte = Chinese_Font->pTable[char_offset + row * bytes_per_row + byte_idx];
+            uint8_t start_col = byte_idx * 8;
+            
+            for (uint8_t bit = 0; bit < 8; bit++) {
+                uint8_t col = start_col + bit;
+                if (col >= Chinese_Font->Width) break;
+                
+                // 高位在前：从最高位(bit7)开始检查
+                if (line_byte & (1 << (7 - bit))) {
+                    ST7789_Display_Buffer[i] = ForgColor;
+                } else {
+                    ST7789_Display_Buffer[i] = BackColor;
+                }
+                i++;
+            }
+        }
+    }
+
+    // 设置字符显示区域
+    SetAddress(x, y, x + Chinese_Font->Width - 1, y + Chinese_Font->Height - 1);
+    WriteBuff(ST7789_Display_Buffer, Chinese_Font->Width * Chinese_Font->Height);
+}
+
+// 中文字符串绘制函数
+void ST7789::DrawChineseString(uint16_t x, uint16_t y, const char* str)
+{
+    if (Chinese_Font == nullptr || ASCII_Font == nullptr || str == nullptr) return;
+    
+    uint16_t currentX = x;
+    uint16_t currentY = y;
+    
+    while (*str != '\0') {
+        // 检查是否是中文字符（GB2312编码的第一个字节范围）
+        if ((uint8_t)*str >= 0xA1 && (uint8_t)*str <= 0xF7) {
+            // 中文字符（2字节）
+            if (*(str + 1) == '\0') break; // 确保有第二个字节
+            
+            // 绘制中文字符
+            DrawChineseChar(currentX, currentY, str);
+            
+            // 移动到下一个字符位置
+            currentX += Chinese_Font->Width;
+            str += 2; // 跳过2个字节
+        } 
+        else if ((uint8_t)*str >= 0x20 && (uint8_t)*str <= 0x7E) {
+            // ASCII字符（可打印字符）
+            DrawChar(currentX, currentY, *str);
+            
+            // 移动到下一个字符位置
+            currentX += ASCII_Font->Width;
+            str += 1; // 跳过1个字节
+        }
+        else {
+            // 其他编码（如UTF-8），暂时跳过
+            str++;
+        }
+        
+        // 换行检查
+        if (currentX + fmax(Chinese_Font->Width, ASCII_Font->Width) > LCD_WIDTH) {
+            currentX = x;
+            currentY += fmax(Chinese_Font->Height, ASCII_Font->Height) + 1;
+            
+            // 检查是否超出屏幕底部
+            if (currentY + fmax(Chinese_Font->Height, ASCII_Font->Height) > LCD_HEIGHT) {
+                break;
+            }
+        }
+    }
 }

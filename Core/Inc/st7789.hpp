@@ -18,6 +18,7 @@ private:
     uint16_t BackColor = 0x0000;
     uint16_t ST7789_Display_Buffer[1024];
     pFONT* ASCII_Font;
+    pFONT* Chinese_Font;
 
     HAL_StatusTypeDef WriteCommand(uint8_t command);
     HAL_StatusTypeDef WriteCommands(uint8_t *commands, uint16_t len);
@@ -45,4 +46,6 @@ public:
     void DrawString(uint16_t x, uint16_t y, const char* str);
     void DrawNumber(uint8_t x, uint8_t y, int32_t num);
     void DrawFloat(uint16_t x, uint16_t y, float decimals, uint8_t len, uint8_t decs);
+    void DrawChineseChar(uint16_t x, uint16_t y, const char* ch);
+    void DrawChineseString(uint16_t x, uint16_t y, const char* str);
 };
