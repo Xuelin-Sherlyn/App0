@@ -2,6 +2,7 @@
 #include "stdint.h"
 #include "stm32h7xx_hal_spi.h"
 #include <cstdint>
+#include "display_font.h"
 
 #ifndef USE_DECIMALS_DISPLAY_FILL_ZERO
 #define USE_DECIMALS_DISPLAY_FILL_ZERO 0
@@ -11,10 +12,12 @@ class ST7789{
 private:
     #define LCD_WIDTH  320
     #define LCD_HEIGHT 240
+
     SPI_HandleTypeDef* hspi;
     uint16_t ForgColor = 0x0000;
     uint16_t BackColor = 0x0000;
     uint16_t ST7789_Display_Buffer[1024];
+    pFONT* ASCII_Font;
 
     HAL_StatusTypeDef WriteCommand(uint8_t command);
     HAL_StatusTypeDef WriteCommands(uint8_t *commands, uint16_t len);
@@ -33,6 +36,7 @@ public:
     HAL_StatusTypeDef Init(void);
     void SetColor(uint32_t color);
     void SetBackColor(uint32_t color);
+    void SetFont(pFONT *font);
     void Clear(void);
     void FillRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height);
     void DrawImage(uint16_t x,uint16_t y,uint16_t width,uint16_t height,const uint8_t *pImage);

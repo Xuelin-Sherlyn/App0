@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "display_font.h"
 #include "dma.h"
 #include "i2c.h"
 #include "spi.h"
@@ -129,6 +130,8 @@ int main(void)
 
   i2cScreen.Init();
   spiScreen.Init();
+  i2cScreen.SetFont(&ASCII_8x16);
+  spiScreen.SetFont(&ASCII_10x20);
   LCD_Backlight_ON;
   spiScreen.SetColor(0xFF2070CF);
   spiScreen.SetBackColor(0xFF000000);
@@ -156,16 +159,16 @@ int main(void)
   i2cScreen.DrawNumber(0, 32, 20160126, 1);
   i2cScreen.DrawFloat(0, 48, 0.767f, 5, 3, 1);
   i2cScreen.UpdateScreen();
-  spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_CompImage);
-  TIM17_Delay_Ms(2000);
-  spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie004);
-  TIM17_Delay_Ms(2000);
-  spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie005);
-  TIM17_Delay_Ms(2000);
+  // spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_CompImage);
+  // TIM17_Delay_Ms(2000);
+  // spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie004);
+  // TIM17_Delay_Ms(2000);
+  // spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie005);
+  // TIM17_Delay_Ms(2000);
   spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie008);
   spiScreen.DrawString(0, 0, "gImage_Akie006");
-  spiScreen.DrawNumber(0, 16, 123);
-  spiScreen.DrawFloat(0, 32, 10.345, 8, 4);
+  spiScreen.DrawNumber(0, 20, 123);
+  spiScreen.DrawFloat(0, 40, 10.345, 8, 4);
   // HAL_UART_Receive_IT(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
   // HAL_UART_Receive_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
   /* USER CODE END 2 */

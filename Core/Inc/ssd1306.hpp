@@ -1,6 +1,7 @@
 
 #include "main.h"
 #include <stdint.h>
+#include "display_font.h"
 
 #ifndef USE_DECIMALS_DISPLAY_FILL_ZERO
 #define USE_DECIMALS_DISPLAY_FILL_ZERO 0
@@ -18,6 +19,7 @@ private:
 
     I2C_HandleTypeDef* hi2c;
     uint8_t SSD1306_Display_Buffer[SSD1306_WIDTH * SSD1306_PAGES];
+    pFONT* ASCII_Font;
 
     HAL_StatusTypeDef WriteCommand(uint8_t command);
     HAL_StatusTypeDef WriteCommands(uint8_t *commands, uint16_t len);
@@ -27,6 +29,7 @@ public:
     explicit SSD1306(I2C_HandleTypeDef* hi2cHandle);
     HAL_StatusTypeDef Init(void);
     HAL_StatusTypeDef SetDisplayArea(uint8_t x, uint8_t y, uint8_t w, uint8_t h);
+    void SetFont(pFONT *font);
     void ClearBuffer(void);
     void UpdateScreen(void);
     void DrawPixel(uint8_t x, uint8_t y, uint8_t color);

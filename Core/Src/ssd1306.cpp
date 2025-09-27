@@ -6,7 +6,6 @@
 #include <cstdlib>
 #include <string.h>
 #include <sys/_intsup.h>
-#include "display_font.h"
 
 SSD1306::SSD1306(I2C_HandleTypeDef* hi2cHandle) : hi2c(hi2cHandle){}
 
@@ -102,6 +101,24 @@ HAL_StatusTypeDef SSD1306::SetDisplayArea(uint8_t x, uint8_t y, uint8_t w, uint8
         static_cast<uint8_t>(y + h - 1)  // 结束页
     };
     return WriteCommands(cmds, sizeof(cmds));
+}
+
+/**
+  * @brief  设置SSD1306的字体 
+  */
+void SSD1306::SetFont(pFONT *font)
+{
+  switch (font->FontType)
+  {
+    // ASCII Font
+    case FONT_TYPE_ASCII:
+    ASCII_Font = font;
+    break;
+
+    // Chinese Font
+    case FONT_TYPE_GBK:
+    break;
+  }
 }
 
 /**
@@ -209,16 +226,26 @@ void SSD1306::DrawChar(uint8_t x, uint8_t y, char ch, uint8_t color)
     // 只处理可打印字符
     if (ch < 32 || ch > 127) return;
     
-    // 获取字符在字体数组中的位置
-    uint16_t c = (ch - 32) * 16; // 每个字符16字节
+    // 计算字符在字体数组中的偏移量
+    uint16_t char_offset = (ch - 32) * ASCII_Font->Sizes;
     
-    // 绘制字符 (假设字体数据是横向逐行存储)
-    for (uint8_t row = 0; row < 16; row++) {
-        uint8_t line = ascii_font_8x16[c + row]; // 获取当前行的像素数据
-        
-        for (uint8_t col = 0; col < 8; col++) {
-            if (line & (1 << (7 - col))) { // 检查每一位
-                DrawPixel(x + col, y + row, color);
+    // 计算每行需要的字节数
+    uint8_t bytes_per_row = (ASCII_Font->Width + 7) / 8;
+    
+    // 绘制字符（固定为阴码、逐行式、高位在前）
+    for (uint8_t row = 0; row < ASCII_Font->Height; row++) {
+        for (uint8_t byte_idx = 0; byte_idx < bytes_per_row; byte_idx++) {
+            uint8_t line_byte = ASCII_Font->pTable[char_offset + row * bytes_per_row + byte_idx];
+            uint8_t start_col = byte_idx * 8;
+            
+            for (uint8_t bit = 0; bit < 8; bit++) {
+                uint8_t col = start_col + bit;
+                if (col >= ASCII_Font->Width) break;
+                
+                // 高位在前：从最高位(bit7)开始检查
+                if (line_byte & (1 << (7 - bit))) {
+                    DrawPixel(x + col, y + row, color);
+                }
             }
         }
     }
@@ -236,8 +263,8 @@ void SSD1306::DrawString(uint8_t x, uint8_t y, const char* str, uint8_t color)
     uint8_t pos = x;
     while (*str) {
         DrawChar(pos, y, *str++, color);
-        pos += 9; // 字符宽度(8像素) + 间距(1像素)
-        if (pos + 8 > SSD1306_WIDTH) break; // 防止溢出屏幕
+        pos += ASCII_Font->Width; // 字符宽度(8像素) + 间距(1像素)
+        if (pos + ASCII_Font->Width > SSD1306_WIDTH) break; // 防止溢出屏幕
     }
 }
 

@@ -7,7 +7,6 @@
 #include <cstdint>
 #include <stdio.h>
 #include <string.h>
-#include "display_font.h"
 
 ST7789::ST7789(SPI_HandleTypeDef* hspiHandle) : hspi(hspiHandle){}
 
@@ -574,6 +573,24 @@ void ST7789::SetBackColor(uint32_t Color)
 }
 
 /**
+  * @brief  设置ST7789的字体
+  */
+void ST7789::SetFont(pFONT *font)
+{
+  switch (font->FontType)
+  {
+    // ASCII Font
+    case FONT_TYPE_ASCII:
+    ASCII_Font = font;
+    break;
+
+    // Chinese Font
+    case FONT_TYPE_GBK:
+    break;
+  }
+}
+
+/**
   * @brief	清空ST7789显示的内容
 */
 void ST7789::Clear(void)
@@ -706,46 +723,42 @@ void ST7789::CopyBuffer(uint16_t x, uint16_t y,uint16_t width,uint16_t height,ui
   */
 void ST7789::DrawChar(uint16_t x, uint16_t y, char ch)
 {
-    // 只处理可打印字符
-    if (ch < 32 || ch > 127) return;
-    
     // 检查边界
     if (x >= LCD_WIDTH || y >= LCD_HEIGHT) return;
-    if (x + 8 > LCD_WIDTH || y + 16 > LCD_HEIGHT) return;
+    if (x + ASCII_Font->Width > LCD_WIDTH || y + ASCII_Font->Height > LCD_HEIGHT) return;
     
-    // 获取字符在字体数组中的位置
-    uint16_t c = (ch - 32) * 16, i = 0; // 每个字符16字节
+    // 计算字符在字体数组中的偏移量
+    uint16_t char_offset = (ch - 32) * ASCII_Font->Sizes, i = 0;
+    
+    // 计算每行需要的字节数
+    uint8_t bytes_per_row = (ASCII_Font->Width + 7) / 8;
     
     LCD_DC_Data;
     
-    // 切换到16位模式
-    // hspi->Init.DataSize = SPI_DATASIZE_16BIT;
-    // HAL_SPI_Init(hspi);
-    
     // 根据取模设置：阴码、逐行式、取模走向顺向(高位在前)
-    for (uint8_t row = 0; row < 16; row++) {
-        uint8_t line = ascii_font_8x16[c + row]; // 获取当前行的像素数据
-        
-        // 逐位检查并绘制像素 (高位在前)
-        for (uint8_t col = 0; col < 8; col++) {
-            // 阴码：1表示点亮像素
-            // 取模走向顺向：最高位对应最左边的像素
-            if (line & (1 << (7 - col))) {
-                // 发送前景色
-                // WriteData_16bit(color);
-				ST7789_Display_Buffer[i] = ForgColor;
-            } else {
-                // 发送背景色
-                // WriteData_16bit(bg_color);
-				ST7789_Display_Buffer[i] = BackColor;
+    for (uint8_t row = 0; row < ASCII_Font->Height; row++) {
+        for (uint8_t byte_idx = 0; byte_idx < bytes_per_row; byte_idx++) {
+            uint8_t line_byte = ASCII_Font->pTable[char_offset + row * bytes_per_row + byte_idx];
+            uint8_t start_col = byte_idx * 8;
+            
+            for (uint8_t bit = 0; bit < 8; bit++) {
+                uint8_t col = start_col + bit;
+                if (col >= ASCII_Font->Width) break;
+                
+                // 阴码：1表示点亮像素，高位在前
+                if (line_byte & (1 << (7 - bit))) {
+                    ST7789_Display_Buffer[i] = ForgColor;  // 前景色
+                } else {
+                    ST7789_Display_Buffer[i] = BackColor;  // 背景色
+                }
+                i++;
             }
-			i++;
         }
     }
 
-	// 设置字符显示区域
-    SetAddress(x, y, x + 7, y + 15);
-	WriteBuff(ST7789_Display_Buffer, 8*16);
+    // 设置字符显示区域
+    SetAddress(x, y, x + ASCII_Font->Width - 1, y + ASCII_Font->Height - 1);
+    WriteBuff(ST7789_Display_Buffer, ASCII_Font->Width * ASCII_Font->Height);
     
     // 切换回8位模式
     // hspi->Init.DataSize = SPI_DATASIZE_8BIT;
@@ -767,7 +780,7 @@ void ST7789::DrawString(uint16_t x, uint16_t y, const char* str)
         // 处理换行符
         if (*str == '\n') {
             pos_x = x;
-            pos_y += 16;
+            pos_y += ASCII_Font->Height;
             str++;
             continue;
         }
@@ -775,16 +788,16 @@ void ST7789::DrawString(uint16_t x, uint16_t y, const char* str)
         // 检查是否超出屏幕右边界
         if (pos_x + 8 > LCD_WIDTH) {
             pos_x = x;
-            pos_y += 16;
+            pos_y += ASCII_Font->Height;
             
             // 检查是否超出屏幕下边界
-            if (pos_y + 16 > LCD_HEIGHT) break;
+            if (pos_y + ASCII_Font->Height > LCD_HEIGHT) break;
         }
         
         // 绘制字符
         DrawChar(pos_x, pos_y, *str);
         
-        pos_x += 8; // 移动到下一个字符位置
+        pos_x += ASCII_Font->Width; // 移动到下一个字符位置
         str++;
     }
 }
