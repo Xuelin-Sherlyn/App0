@@ -20,6 +20,7 @@ private:
     I2C_HandleTypeDef* hi2c;
     uint8_t SSD1306_Display_Buffer[SSD1306_WIDTH * SSD1306_PAGES];
     pFONT* ASCII_Font;
+    pFONT* Chinese_Font;
 
     HAL_StatusTypeDef WriteCommand(uint8_t command);
     HAL_StatusTypeDef WriteCommands(uint8_t *commands, uint16_t len);
@@ -41,4 +42,6 @@ public:
     void DrawString(uint8_t x, uint8_t y, const char* str, uint8_t color);
     void DrawNumber(uint8_t x, uint8_t y, int32_t num, uint8_t color);
     void DrawFloat(uint16_t x, uint16_t y, float decimals, uint8_t len, uint8_t decs, uint8_t color);
+    void DrawChineseChar(uint8_t x, uint8_t y, const char* ch, uint8_t color);
+    void DrawChineseString(uint8_t x, uint8_t y, const char* str, uint8_t color);
 };

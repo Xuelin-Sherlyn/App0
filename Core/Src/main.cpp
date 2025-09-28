@@ -131,7 +131,9 @@ int main(void)
   i2cScreen.Init();
   spiScreen.Init();
   i2cScreen.SetFont(&ASCII_8x16);
+  i2cScreen.SetFont(&Chinese_16x16);
   spiScreen.SetFont(&ASCII_10x20);
+  spiScreen.SetFont(&Chinese_16x16);
   LCD_Backlight_ON;
   spiScreen.SetColor(0xFF2070CF);
   spiScreen.SetBackColor(0xFF000000);
@@ -154,7 +156,7 @@ int main(void)
   i2cScreen.ClearBuffer();
   i2cScreen.UpdateScreen();
   TIM17_Delay_Ms(100);
-  i2cScreen.DrawString(0, 0, "Akie~", 1);
+  i2cScreen.DrawChineseString(0, 0, "Akie秋绘~", 1);
   i2cScreen.DrawString(0, 16, "Happy Birthday", 1);
   i2cScreen.DrawNumber(0, 32, 20160126, 1);
   i2cScreen.DrawFloat(0, 48, 0.767f, 5, 3, 1);
@@ -169,6 +171,7 @@ int main(void)
   spiScreen.DrawString(0, 0, "gImage_Akie006");
   spiScreen.DrawNumber(0, 20, 123);
   spiScreen.DrawFloat(0, 40, 10.345, 8, 4);
+  spiScreen.DrawChineseString(0, 60, "Akie秋绘");
   // HAL_UART_Receive_IT(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
   // HAL_UART_Receive_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
   /* USER CODE END 2 */

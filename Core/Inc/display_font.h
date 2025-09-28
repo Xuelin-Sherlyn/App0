@@ -3,6 +3,9 @@
 #include "stdint.h"
 #include <stdint.h>
 
+// !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
+//↑这里有空格
+
 #define FONT_TYPE_ASCII 437
 #define FONT_TYPE_GBK   936
 
@@ -16,6 +19,10 @@ typedef struct _pFont
     uint16_t            FontType;       //  字体标识符
 } pFONT;
 
+/*  ASCII Font  */
 extern pFONT ASCII_8x16;
 extern pFONT ASCII_9x18;
 extern pFONT ASCII_10x20;
+
+/*  Chinese Font  */
+extern pFONT Chinese_16x16;

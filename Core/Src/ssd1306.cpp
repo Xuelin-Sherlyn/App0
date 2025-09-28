@@ -117,6 +117,7 @@ void SSD1306::SetFont(pFONT *font)
 
     // Chinese Font
     case FONT_TYPE_GBK:
+    Chinese_Font = font;
     break;
   }
 }
@@ -302,4 +303,119 @@ void SSD1306::DrawFloat(uint16_t x, uint16_t y, float decimals, uint8_t len, uin
     #endif
     
     DrawString(x, y, buffer, color);
+}
+
+/**
+ * @brief 显示单个中文字符
+ * @param x: 字符左上角X坐标
+ * @param y: 字符左上角Y坐标
+ * @param ch: 中文字符
+ */
+void SSD1306::DrawChineseChar(uint8_t x, uint8_t y, const char* ch, uint8_t color)
+{
+    if (ch == nullptr || Chinese_Font == nullptr) return;
+    
+    // 只处理可打印字符
+    if (ch[0] == '\0' || ch[1] == '\0') return;
+    
+    // 字符编码到字库索引的映射
+    uint16_t char_index = 0;
+    uint16_t buffer_index = 0;
+
+    // 通过对比数组中的汉字编码，定位字模地址
+    while(1) {		
+        // 检查字符编码是否匹配
+        if (*(Chinese_Font->pTable + (buffer_index + 1) * Chinese_Font->Sizes + 0) == *ch && 
+            *(Chinese_Font->pTable + (buffer_index + 1) * Chinese_Font->Sizes + 1) == *(ch + 1)) {   
+            char_index = buffer_index; // 字模地址偏移
+            break;
+        }				
+        buffer_index += 2; // 每个中文字符占两字节
+
+        if(buffer_index >= Chinese_Font->Table_Rows) return; // 字模列表没这个字
+    }
+    
+    // 计算字模数据偏移量
+    const uint8_t* char_data = Chinese_Font->pTable + char_index * Chinese_Font->Sizes;
+    
+    // 边界检查
+    if (x >= SSD1306_WIDTH || y >= SSD1306_HEIGHT) return;
+    if (x + Chinese_Font->Width > SSD1306_WIDTH || y + Chinese_Font->Height > SSD1306_HEIGHT) return;
+    
+    // 计算每行需要的字节数
+    uint8_t bytes_per_row = (Chinese_Font->Width + 7) / 8;
+    
+    // SSD1306使用逐像素绘制，不需要缓冲区
+    // 遍历每一行
+    for(uint8_t row = 0; row < Chinese_Font->Height; row++) {
+        // 遍历每行的每个字节
+        for(uint8_t byte_idx = 0; byte_idx < bytes_per_row; byte_idx++) {
+            uint8_t line_byte = char_data[row * bytes_per_row + byte_idx];
+            uint8_t start_col = byte_idx * 8;
+            
+            // 遍历每个字节的每个位
+            for(uint8_t bit = 0; bit < 8; bit++) {
+                uint8_t col = start_col + bit;
+                if (col >= Chinese_Font->Width) break;
+                
+                // 检查像素点是否应该点亮（阴码，高位在前）
+                if (line_byte & (1 << (7 - bit))) {
+                    DrawPixel(x + col, y + row, color);  // 点亮像素
+                } 
+            }
+        }
+    }
+}
+
+/**
+ * @brief 显示中文字符串
+ * @param x: 字符串起始X坐标
+ * @param y: 字符串起始Y坐标
+ * @param str: 中文字符串
+ * @note 可以在字符间添加像素间隔，修改 spacing 参数即可
+ */
+void SSD1306::DrawChineseString(uint8_t x, uint8_t y, const char* str, uint8_t color)
+{
+    if (str == nullptr || Chinese_Font == nullptr) return;
+    
+    uint8_t currentX = x;
+    uint8_t currentY = y;
+     uint8_t spacing = 0;
+    
+    while (*str != '\0') {
+        // 检查是否是中文字符（GB2312编码范围）
+        uint8_t current_byte = (uint8_t)*str;
+        
+        if (current_byte >= 0xA1 && current_byte <= 0xF7) {
+            // 确保有完整的双字节
+            if (*(str + 1) == '\0') break;
+            
+            // 显示中文字符
+            DrawChineseChar(currentX, currentY, str, color);
+            
+            // 移动到下一个字符位置
+            currentX += Chinese_Font->Width + spacing;
+            str += 2; // 跳过2个字节（中文字符）
+        } 
+        else if (current_byte >= 0x20 && current_byte <= 0x7E) {
+            // ASCII字符 - 使用现有的DrawChar函数
+            DrawChar(currentX, currentY, *str, color);
+            currentX += ASCII_Font->Width + spacing;
+            str += 1; // 跳过1个字节（ASCII字符）
+        }
+        else {
+            // 其他字符跳过
+            str += 1;
+        }
+        
+        // 换行检查
+        if (currentX + fmax(Chinese_Font->Width, ASCII_Font->Width) > SSD1306_WIDTH) {
+            currentX = x;
+            currentY += fmax(Chinese_Font->Height, ASCII_Font->Height) + 1;
+            
+            if (currentY + fmax(Chinese_Font->Height, ASCII_Font->Height) > SSD1306_HEIGHT) {
+                break;
+            }
+        }
+    }
 }
