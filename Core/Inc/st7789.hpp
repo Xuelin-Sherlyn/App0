@@ -10,8 +10,8 @@
 
 class ST7789{
 private:
-    #define LCD_WIDTH  320
-    #define LCD_HEIGHT 240
+    #define ST7789_WIDTH  320
+    #define ST7789_HEIGHT 240
 
     SPI_HandleTypeDef* hspi;
     uint16_t ForgColor = 0x0000;
