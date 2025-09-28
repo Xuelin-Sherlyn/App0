@@ -715,11 +715,9 @@ void ST7789::CopyBuffer(uint16_t x, uint16_t y,uint16_t width,uint16_t height,ui
 
 /**
   * @brief  绘制一个字符到ST7789屏幕
-  * @param  x: X坐标 (0-239)
-  * @param  y: Y坐标 (0-319) 
+  * @param  x: X坐标 (0-319)
+  * @param  y: Y坐标 (0-239) 
   * @param  ch: 要绘制的字符
-  * @param  color: 字符颜色 (16位RGB565)
-  * @param  bg_color: 背景颜色 (16位RGB565)
   */
 void ST7789::DrawChar(uint16_t x, uint16_t y, char ch)
 {
@@ -767,8 +765,8 @@ void ST7789::DrawChar(uint16_t x, uint16_t y, char ch)
 
 /**
   * @brief  绘制字符串到ST7789屏幕
-  * @param  x: 起始X坐标 (0-239)
-  * @param  y: 起始Y坐标 (0-319)
+  * @param  x: 起始X坐标 (0-319)
+  * @param  y: 起始Y坐标 (0-239)
   * @param  str: 要绘制的字符串
   */
 void ST7789::DrawString(uint16_t x, uint16_t y, const char* str)
