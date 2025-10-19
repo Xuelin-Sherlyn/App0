@@ -18,9 +18,11 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "display_font.h"
 #include "dma.h"
+#include "fatfs.h"
 #include "i2c.h"
+#include "sai.h"
+#include "sdmmc.h"
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
@@ -36,6 +38,7 @@
 #include "ssd1306.hpp"
 #include "st7789.hpp"
 #include "compImage.h"
+#include "wav_player.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -122,12 +125,14 @@ int main(void)
   MX_TIM17_Init();
   MX_SPI6_Init();
   MX_I2C1_Init();
+  MX_SAI1_Init();
+  MX_SDMMC1_SD_Init();
+  MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
   memset((uint8_t*)mSerialReciveBuffer, 0xff, ReciveSize);
   __HAL_DMA_DISABLE_IT(&hdma_usart1_rx, DMA_IT_HT);
   HAL_UARTEx_ReceiveToIdle_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
   printf("\033[35mThis is a run in QSPI Flash`s Application, Execute method is XIP\n\033[31mCall \"resetMem\"to clean usart1 recive memory, \"Exit\" to exit Application\033[0m\n");
-
   i2cScreen.Init();
   spiScreen.Init();
   i2cScreen.SetFont(&ASCII_8x16);
@@ -172,8 +177,8 @@ int main(void)
   spiScreen.DrawNumber(0, 20, 123);
   spiScreen.DrawFloat(0, 40, 10.345, 8, 4);
   spiScreen.DrawChineseString(0, 60, "Akie秋绘");
-  // HAL_UART_Receive_IT(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
-  // HAL_UART_Receive_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
+  HAL_UART_Receive_IT(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
+  HAL_UART_Receive_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -222,7 +227,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLM = 5;
   RCC_OscInitStruct.PLL.PLLN = 192;
   RCC_OscInitStruct.PLL.PLLP = 2;
-  RCC_OscInitStruct.PLL.PLLQ = 2;
+  RCC_OscInitStruct.PLL.PLLQ = 4;
   RCC_OscInitStruct.PLL.PLLR = 2;
   RCC_OscInitStruct.PLL.PLLRGE = RCC_PLL1VCIRANGE_2;
   RCC_OscInitStruct.PLL.PLLVCOSEL = RCC_PLL1VCOWIDE;
@@ -310,6 +315,9 @@ void mProcess_SerialReceiveData(char* data, uint16_t Size)
   else if (strncmp(data, "resetMem", Size) == 0) {
       memset((uint8_t*)mSerialReciveBuffer, 255, ReciveSize);
     }
+  else if (strncmp(data, "playaudio", Size) == 0) {
+      WAV_PlayFile("0:/output.wav");
+  }
   else if (strncmp(data, "Exit", Size) == 0) {
       HAL_UART_Transmit_DMA(&huart1, (uint8_t*)"Application Exit\n", 18);
       LCD_Backlight_OFF;

@@ -619,13 +619,13 @@ void ST7789::Clear(void)
 void ST7789::FillRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height)
 {
   	SetAddress( x, y, x+width-1, y+height-1);
-	LCD_DC_Data;
+	  LCD_DC_Data;
   	hspi->Init.DataSize = SPI_DATASIZE_16BIT;
   	HAL_SPI_Init(hspi);
   	SPI_Transmit(hspi, ForgColor, width*height);
 	// printf("%x\n",ForgColor);
 
-	hspi->Init.DataSize = SPI_DATASIZE_8BIT;
+	  hspi->Init.DataSize = SPI_DATASIZE_8BIT;
   	HAL_SPI_Init(hspi);
 }
 
