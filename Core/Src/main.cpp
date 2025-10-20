@@ -64,7 +64,7 @@ ST7789 spiScreen(&hspi6);
 
 volatile uint8_t val = 0;
 __attribute__((section(".ram_d1"))) 
-volatile char mSerialReciveBuffer[ReciveSize] = {0};
+volatile char mSerialReciveBuffer[ReciveSize];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -140,45 +140,45 @@ int main(void)
   spiScreen.SetFont(&ASCII_10x20);
   spiScreen.SetFont(&Chinese_16x16);
   LCD_Backlight_ON;
-  spiScreen.SetColor(0xFF2070CF);
+  // spiScreen.SetColor(0xFF2070CF);
+  // spiScreen.FillRect(10, 10, 100, 100);
+  // spiScreen.SetColor(0xFFFF0000);
+  // spiScreen.FillRect(50, 50, 100, 100);
+  // spiScreen.SetColor(0xFF00FF00);
+  // spiScreen.FillRect(90, 90, 100, 100);
+  // spiScreen.SetColor(0xFF0000FF);
+  // spiScreen.FillRect(130, 130, 100, 100);
+  // spiScreen.CopyBuffer(10, 10, 128, 128, (uint16_t*)gImage_Akie000);
+  // spiScreen.CopyBuffer(148, 10, 128, 128, (uint16_t*)gImage_Akie001);
+  // i2cScreen.ClearBuffer();
+  // i2cScreen.DrawRect(20, 20, 32, 32, 1);
+  // i2cScreen.FillRect(64, 30, 32, 32, 1);
+  // i2cScreen.UpdateScreen();
+  // TIM17_Delay_Ms(2000);
+  // i2cScreen.ClearBuffer();
+  // i2cScreen.UpdateScreen();
+  spiScreen.SetColor(0xFF00FFFF);
   spiScreen.SetBackColor(0xFF000000);
   spiScreen.Clear();
-  spiScreen.FillRect(10, 10, 100, 100);
-  spiScreen.SetColor(0xFFFF0000);
-  spiScreen.FillRect(50, 50, 100, 100);
-  spiScreen.SetColor(0xFF00FF00);
-  spiScreen.FillRect(90, 90, 100, 100);
-  spiScreen.SetColor(0xFF0000FF);
-  spiScreen.FillRect(130, 130, 100, 100);
-  spiScreen.SetColor(0xFF00FFFF);
-  spiScreen.CopyBuffer(10, 10, 128, 128, (uint16_t*)gImage_Akie000);
-  spiScreen.CopyBuffer(148, 10, 128, 128, (uint16_t*)gImage_Akie001);
-  i2cScreen.ClearBuffer();
-  i2cScreen.DrawRect(20, 20, 32, 32, 1);
-  i2cScreen.FillRect(64, 30, 32, 32, 1);
-  i2cScreen.UpdateScreen();
-  TIM17_Delay_Ms(2000);
-  i2cScreen.ClearBuffer();
-  i2cScreen.UpdateScreen();
   TIM17_Delay_Ms(100);
   i2cScreen.DrawChineseString(0, 0, "Akie秋绘~", 1);
   i2cScreen.DrawString(0, 16, "Happy Birthday", 1);
   i2cScreen.DrawNumber(0, 32, 20160126, 1);
   i2cScreen.DrawFloat(0, 48, 0.767f, 5, 3, 1);
   i2cScreen.UpdateScreen();
-  spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_CompImage);
-  TIM17_Delay_Ms(2000);
-  spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie004);
-  TIM17_Delay_Ms(2000);
-  spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie005);
-  TIM17_Delay_Ms(2000);
+  // spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_CompImage);
+  // TIM17_Delay_Ms(2000);
+  // spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie004);
+  // TIM17_Delay_Ms(2000);
+  // spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie005);
+  // TIM17_Delay_Ms(2000);
   spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie008);
   spiScreen.DrawString(0, 0, "gImage_Akie006");
   spiScreen.DrawNumber(0, 20, 123);
   spiScreen.DrawFloat(0, 40, 10.345, 8, 4);
   spiScreen.DrawChineseString(0, 60, "Akie秋绘");
-  HAL_UART_Receive_IT(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
-  HAL_UART_Receive_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
+  // HAL_UART_Receive_IT(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
+  // HAL_UART_Receive_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -283,7 +283,9 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
   if(huart->Instance == USART1)
   {
     // HAL_UART_Transmit_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, Size);
+    SCB_InvalidateDCache_by_Addr((uint32_t*)mSerialReciveBuffer, ReciveSize);
     mProcess_SerialReceiveData((char*)mSerialReciveBuffer, Size);
+    SCB_InvalidateDCache_by_Addr((uint32_t*)mSerialReciveBuffer, ReciveSize);
     __HAL_DMA_DISABLE_IT(&hdma_usart1_rx, DMA_IT_HT);
     HAL_UARTEx_ReceiveToIdle_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
   }

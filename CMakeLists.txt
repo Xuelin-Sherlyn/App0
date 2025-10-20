@@ -12,7 +12,7 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS ON)
 set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} -u _printf_float -u _scanf_float")
-set(CMAKE_CXX_FLAGS_DEBUG "-O1 -g3")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3")
 
 # Define the build type
 if(NOT CMAKE_BUILD_TYPE)
