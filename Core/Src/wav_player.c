@@ -406,7 +406,7 @@ void WAV_StartPlayback(void) {
     
     // 使用与正弦波测试相同的方式启动DMA
     // 注意：这里使用 HAL_DMAEx_MultiBufferStart 而不是 HAL_SAI_Transmit_DMA
-    
+    __disable_irq();
     // 先停止DMA
     HAL_DMA_Abort(&hdma_sai1_a);
     
@@ -416,6 +416,7 @@ void WAV_StartPlayback(void) {
                                      (uint32_t)&hsai_BlockA1.Instance->DR, 
                                      (uint32_t)sai_tx_buffer[1], 
                                      SAI_BUFFER_SIZE);
+    __enable_irq();
     
     if(dma_status == HAL_OK) {
         printf("WAV_StartPlayback: DMA MultiBuffer started successfully\n");
@@ -453,7 +454,7 @@ void WAV_StartPlayback(void) {
   */
 void WAV_StartPlayback_Alternative(void) {
     printf("WAV_StartPlayback_Alternative: Using alternative startup method\n");
-    
+    __disable_irq();
     // 停止DMA
     HAL_DMA_Abort(&hdma_sai1_a);
     
@@ -463,6 +464,7 @@ void WAV_StartPlayback_Alternative(void) {
                                      (uint32_t)&hsai_BlockA1.Instance->DR, 
                                      (uint32_t)sai_tx_buffer[1], 
                                      SAI_BUFFER_SIZE);
+    __enable_irq();
     
     if(dma_status == HAL_OK) {
         printf("WAV_StartPlayback_Alternative: DMA started successfully\n");
@@ -521,10 +523,12 @@ void Verify_SAI_Buffer(uint8_t buffer_idx) {
   */
 void WAV_StopPlayback(void) {
     if(wav_player.state != AUDIO_STOPPED) {
+        __disable_irq();
         // 停止DMA传输
         HAL_DMA_Abort(&hdma_sai1_a);
         HAL_SAI_DMAStop(&hsai_BlockA1);
         HAL_SAI_Abort(&hsai_BlockA1);
+        __enable_irq();
         
         // 关闭文件
         // if(f_is_open(&wav_player.file)) {

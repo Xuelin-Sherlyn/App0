@@ -9,7 +9,19 @@
 #include <string.h>
 #include "math.h"
 
-ST7789::ST7789(SPI_HandleTypeDef* hspiHandle) : hspi(hspiHandle){}
+__attribute__((section(".ram_d1"), aligned(32)))
+static uint16_t double_buffer_memory[2][320*240];  // 实际的内存缓冲区
+
+ST7789::ST7789(SPI_HandleTypeDef* hspiHandle) : hspi(hspiHandle)
+{
+    // 将指针指向实际的内存缓冲区
+    double_buffer[0] = double_buffer_memory[0];
+    double_buffer[1] = double_buffer_memory[1];
+    
+    // 初始化缓冲区为黑色
+    memset(double_buffer[0], 0x00, BUFFER_SIZE * sizeof(uint16_t));
+    memset(double_buffer[1], 0x00, BUFFER_SIZE * sizeof(uint16_t));
+}
 
 /**
   *	@brief	初始化ST7789显示屏
@@ -959,5 +971,247 @@ void ST7789::DrawChineseString(uint16_t x, uint16_t y, const char* str)
                 break;
             }
         }
+    }
+}
+
+/**
+  * @brief  加载图片列表
+  * @param  images: 图片数组指针
+  * @param  count: 图片数量
+  * @retval 成功加载的图片数量
+  */
+uint8_t ST7789::LoadImages(Image_t* images, uint8_t count)
+{
+    if (images == nullptr || count == 0) return 0;
+    
+    image_list = images;
+    total_images = count;
+    current_image_index = 0;
+    
+    return total_images;
+}
+
+/**
+  * @brief  开始滚动播放
+  * @param  direction: 滚动方向
+  * @param  speed: 滚动速度
+  */
+void ST7789::StartScroll(ScrollDirection_t direction, uint16_t speed)
+{
+    scroll_direction = direction;
+    scroll_speed = (speed > 0) ? speed : 1;  // 确保速度至少为1
+    is_scrolling = 1;
+    scroll_offset_x = 0;
+    scroll_offset_y = 0;
+}
+
+/**
+  * @brief  停止滚动播放
+  */
+void ST7789::StopScroll(void)
+{
+    is_scrolling = 0;
+}
+
+/**
+  * @brief  设置滚动速度
+  * @param  speed: 滚动速度
+  */
+void ST7789::SetScrollSpeed(uint16_t speed)
+{
+    scroll_speed = speed;
+}
+
+/**
+  * @brief  设置滚动方向
+  * @param  direction: 滚动方向
+  */
+void ST7789::SetScrollDirection(ScrollDirection_t direction)
+{
+    scroll_direction = direction;
+}
+
+/**
+  * @brief  切换到下一张图片
+  */
+void ST7789::NextImage(void)
+{
+    if (total_images > 0) {
+        current_image_index = (current_image_index + 1) % total_images;
+        scroll_offset_x = 0;
+        scroll_offset_y = 0;
+    }
+}
+
+/**
+  * @brief  切换到上一张图片
+  */
+void ST7789::PreviousImage(void)
+{
+    if (total_images > 0) {
+        current_image_index = (current_image_index == 0) ? total_images - 1 : current_image_index - 1;
+        scroll_offset_x = 0;
+        scroll_offset_y = 0;
+    }
+}
+
+/**
+  * @brief  获取当前图片索引
+  * @retval 当前图片索引
+  */
+uint8_t ST7789::GetCurrentImageIndex(void)
+{
+    return current_image_index;
+}
+
+/**
+  * @brief  获取图片总数
+  * @retval 图片总数
+  */
+uint8_t ST7789::GetTotalImages(void)
+{
+    return total_images;
+}
+
+/**
+  * @brief  获取图片像素颜色
+  * @param  img: 图片指针
+  * @param  x: X坐标
+  * @param  y: Y坐标
+  * @retval 像素颜色(RGB565)
+  */
+uint16_t ST7789::GetPixelColor(Image_t* img, int16_t x, int16_t y)
+{
+    if (img == nullptr || img->data == nullptr) return 0;
+    
+    // 边界检查
+    if (x < 0 || x >= img->width || y < 0 || y >= img->height) {
+        return 0;
+    }
+    // 计算在uint8_t数组中的位置（每个像素2个字节）
+    uint32_t pixel_index = (y * img->width + x) * 2;
+    
+    // 组合两个uint8_t为uint16_t (RGB565)
+    // 存储顺序为低位在前（小端序）
+    uint16_t color = (img->data[pixel_index + 1] << 8) | img->data[pixel_index];
+    
+    return color;
+}
+
+/**
+  * @brief  交换双缓冲
+  */
+void ST7789::SwapBuffers(void)
+{
+    active_buffer = 1 - active_buffer;
+}
+
+/**
+  * @brief  渲染滚动帧（修复类型问题）
+  */
+void ST7789::RenderScrollFrame(void)
+{
+    // 严格的条件检查
+    if (!is_scrolling || image_list == nullptr || total_images == 0) {
+        return;
+    }
+    
+    if (current_image_index >= total_images) {
+        current_image_index = 0;
+        return;
+    }
+    
+    Image_t* current_image = &image_list[current_image_index];
+    
+    // 检查图片数据是否有效
+    if (current_image->data == nullptr || 
+        current_image->width == 0 || 
+        current_image->height == 0) {
+        return;
+    }
+    
+    // 获取当前渲染缓冲区
+    uint16_t* render_buffer = double_buffer[active_buffer];
+    
+    // 安全的渲染循环
+    switch (scroll_direction) {
+        case SCROLL_LEFT:
+            for (int16_t y = 0; y < ST7789_HEIGHT; y++) {
+                for (int16_t x = 0; x < ST7789_WIDTH; x++) {
+                    int16_t src_x = (scroll_offset_x + x) % current_image->width;
+                    int16_t src_y = y % current_image->height;
+                    uint32_t buffer_index = y * ST7789_WIDTH + x;
+                    
+                    // 确保不越界
+                    if (buffer_index < BUFFER_SIZE) {
+                        render_buffer[buffer_index] = GetPixelColor(current_image, src_x, src_y);
+                    }
+                }
+            }
+            scroll_offset_x = (scroll_offset_x + scroll_speed) % current_image->width;
+            break;
+            
+        case SCROLL_RIGHT:
+            for (int16_t y = 0; y < ST7789_HEIGHT; y++) {
+                for (int16_t x = 0; x < ST7789_WIDTH; x++) {
+                    int16_t src_x = (current_image->width - scroll_offset_x + x) % current_image->width;
+                    if (src_x < 0) src_x += current_image->width;
+                    int16_t src_y = y % current_image->height;
+                    uint32_t buffer_index = y * ST7789_WIDTH + x;
+                    
+                    if (buffer_index < BUFFER_SIZE) {
+                        render_buffer[buffer_index] = GetPixelColor(current_image, src_x, src_y);
+                    }
+                }
+            }
+            scroll_offset_x = (scroll_offset_x + scroll_speed) % current_image->width;
+            break;
+            
+        case SCROLL_UP:
+            for (int16_t y = 0; y < ST7789_HEIGHT; y++) {
+                for (int16_t x = 0; x < ST7789_WIDTH; x++) {
+                    int16_t src_x = x % current_image->width;
+                    int16_t src_y = (scroll_offset_y + y) % current_image->height;
+                    uint32_t buffer_index = y * ST7789_WIDTH + x;
+                    
+                    if (buffer_index < BUFFER_SIZE) {
+                        render_buffer[buffer_index] = GetPixelColor(current_image, src_x, src_y);
+                    }
+                }
+            }
+            scroll_offset_y = (scroll_offset_y + scroll_speed) % current_image->height;
+            break;
+            
+        case SCROLL_DOWN:
+            for (int16_t y = 0; y < ST7789_HEIGHT; y++) {
+                for (int16_t x = 0; x < ST7789_WIDTH; x++) {
+                    int16_t src_x = x % current_image->width;
+                    int16_t src_y = (current_image->height - scroll_offset_y + y) % current_image->height;
+                    if (src_y < 0) src_y += current_image->height;
+                    uint32_t buffer_index = y * ST7789_WIDTH + x;
+                    
+                    if (buffer_index < BUFFER_SIZE) {
+                        render_buffer[buffer_index] = GetPixelColor(current_image, src_x, src_y);
+                    }
+                }
+            }
+            scroll_offset_y = (scroll_offset_y + scroll_speed) % current_image->height;
+            break;
+    }
+    
+    // 显示渲染的帧
+    CopyBuffer(0, 0, ST7789_WIDTH, ST7789_HEIGHT, render_buffer);
+    
+    // 交换缓冲区
+    active_buffer = 1 - active_buffer;
+}
+
+/**
+  * @brief  更新滚动显示（在主循环中调用）
+  */
+void ST7789::UpdateScroll(void)
+{
+    if (is_scrolling) {
+        RenderScrollFrame();
     }
 }

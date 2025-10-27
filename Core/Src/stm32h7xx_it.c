@@ -90,7 +90,8 @@ void NMI_Handler(void)
 void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
-// 获取所有相关寄存器
+    printf("\n\033[31mHardFault Call!!!\033[0m\n");
+    // 获取所有相关寄存器
     uint32_t cfsr = SCB->CFSR;
     uint32_t hfsr = SCB->HFSR; 
     uint32_t mmfar = SCB->MMFAR;

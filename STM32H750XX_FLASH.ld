@@ -258,6 +258,13 @@ SECTIONS
     . = ALIGN(4);
   } >RAM_D1
 
+  .ram_d2 :
+  {
+    . = ALIGN(4);
+    *(.ram_d1)
+    . = ALIGN(4);
+  } >RAM_D2
+
   /* Remove information from the standard libraries */
   /DISCARD/ :
   {

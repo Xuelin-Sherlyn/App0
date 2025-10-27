@@ -24,6 +24,7 @@
 #include "sai.h"
 #include "sdmmc.h"
 #include "spi.h"
+#include "stm32h7xx_hal.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
@@ -61,10 +62,11 @@
 /* USER CODE BEGIN PV */
 SSD1306 i2cScreen(&hi2c1);
 ST7789 spiScreen(&hspi6);
+Image_t g_Image[1];
 
 volatile uint8_t val = 0;
-__attribute__((section(".ram_d1"))) 
-volatile char mSerialReciveBuffer[ReciveSize];
+__attribute__((section(".ram_d1")))
+  volatile char mSerialReciveBuffer[ReciveSize];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -89,6 +91,8 @@ int main(void)
   /* USER CODE BEGIN 1 */
   /*重要！！！恢复中断可用*/
   __enable_irq();
+  static uint32_t last_scroll_time = 0;
+  const uint32_t SCROLL_INTERVAL = 33;  // 约30fps
   /* USER CODE END 1 */
 
   /* MPU Configuration--------------------------------------------------------*/
@@ -129,9 +133,9 @@ int main(void)
   MX_SDMMC1_SD_Init();
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
-  memset((uint8_t*)mSerialReciveBuffer, 0xff, ReciveSize);
-  __HAL_DMA_DISABLE_IT(&hdma_usart1_rx, DMA_IT_HT);
-  HAL_UARTEx_ReceiveToIdle_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
+  // memset((uint8_t*)mSerialReciveBuffer, 0xff, ReciveSize);
+  // __HAL_DMA_DISABLE_IT(&hdma_usart1_rx, DMA_IT_HT);
+  // HAL_UARTEx_ReceiveToIdle_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
   printf("\033[35mThis is a run in QSPI Flash`s Application, Execute method is XIP\n\033[31mCall \"resetMem\"to clean usart1 recive memory, \"Exit\" to exit Application\033[0m\n");
   i2cScreen.Init();
   spiScreen.Init();
@@ -179,6 +183,15 @@ int main(void)
   spiScreen.DrawChineseString(0, 60, "Akie秋绘");
   // HAL_UART_Receive_IT(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
   // HAL_UART_Receive_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
+  // WAV_PlayFile("0:/output.wav");
+  HAL_Delay(3000);
+  g_Image[0] = {.width = 128,
+                .height = 128,
+                .data = (uint8_t*)gImage_Akie000
+              };
+  // 加载图片到LCD驱动
+  spiScreen.LoadImages(g_Image, 1);
+  spiScreen.StartScroll(SCROLL_LEFT, 5);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -189,8 +202,17 @@ int main(void)
     // for循环大概一个时钟周期，但该用TIM还得用TIM，HAL_Delay这玩意阻塞的
     // for (volatile int i = 0; i < 48000000; i++);
     // TIM17_Delay_Ms(1000);
+    uint32_t current_time = HAL_GetTick();
+        
+    // 更新滚动显示（控制帧率）
+    if (current_time - last_scroll_time >= SCROLL_INTERVAL) {
+        spiScreen.UpdateScroll();
+        last_scroll_time = current_time;
+    }
     if(val == 1)
-    break;
+      break;
+    // 其他任务
+    HAL_Delay(1);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -355,13 +377,34 @@ void MPU_Config(void)
   */
   MPU_InitStruct.Enable = MPU_REGION_ENABLE;
   MPU_InitStruct.Number = MPU_REGION_NUMBER0;
-  MPU_InitStruct.BaseAddress = 0x0;
-  MPU_InitStruct.Size = MPU_REGION_SIZE_4GB;
-  MPU_InitStruct.SubRegionDisable = 0x87;
+  MPU_InitStruct.BaseAddress = 0x20000000;
+  MPU_InitStruct.Size = MPU_REGION_SIZE_128KB;
+  MPU_InitStruct.SubRegionDisable = 0x00;
   MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL0;
   MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
   MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_ENABLE;
-  MPU_InitStruct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
+  MPU_InitStruct.IsShareable = MPU_ACCESS_SHAREABLE;
+  MPU_InitStruct.IsCacheable = MPU_ACCESS_CACHEABLE;
+  MPU_InitStruct.IsBufferable = MPU_ACCESS_BUFFERABLE;
+
+  HAL_MPU_ConfigRegion(&MPU_InitStruct);
+
+  /** Initializes and configures the Region and the memory to be protected
+  */
+  MPU_InitStruct.Number = MPU_REGION_NUMBER1;
+  MPU_InitStruct.BaseAddress = 0x24000000;
+  MPU_InitStruct.Size = MPU_REGION_SIZE_512KB;
+  MPU_InitStruct.SubRegionDisable = 0x0;
+  MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
+
+  HAL_MPU_ConfigRegion(&MPU_InitStruct);
+
+  /** Initializes and configures the Region and the memory to be protected
+  */
+  MPU_InitStruct.Number = MPU_REGION_NUMBER2;
+  MPU_InitStruct.BaseAddress = 0x90000000;
+  MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL0;
+  MPU_InitStruct.Size = MPU_REGION_SIZE_32MB;
   MPU_InitStruct.IsCacheable = MPU_ACCESS_CACHEABLE;
   MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
 
