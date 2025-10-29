@@ -52,6 +52,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Src/display_font.c
     Core/Src/compImage.c
     Core/Src/wav_player.c
+    Core/Src/AS5600.cpp
 )
 
 # Add include paths

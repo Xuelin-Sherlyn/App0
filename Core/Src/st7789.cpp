@@ -1092,7 +1092,7 @@ uint16_t ST7789::GetPixelColor(Image_t* img, int16_t x, int16_t y)
     uint32_t pixel_index = (y * img->width + x) * 2;
     
     // 组合两个uint8_t为uint16_t (RGB565)
-    // 存储顺序为低位在前（小端序）
+    // 存储顺序为高位在前（大端序）
     uint16_t color = (img->data[pixel_index + 1] << 8) | img->data[pixel_index];
     
     return color;
