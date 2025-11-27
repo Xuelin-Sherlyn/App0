@@ -21,10 +21,12 @@
 #include "dma.h"
 #include "fatfs.h"
 #include "i2c.h"
+#include "quadspi.h"
 #include "sai.h"
 #include "sdmmc.h"
 #include "spi.h"
 #include "stm32h7xx_hal.h"
+#include "stm32h7xx_hal_def.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
@@ -93,8 +95,8 @@ int main(void)
   /* USER CODE BEGIN 1 */
   /*重要！！！恢复中断可用*/
   __enable_irq();
-  static uint32_t last_scroll_time = 0;
-  const uint32_t SCROLL_INTERVAL = 33;  // 约30fps
+  // static uint32_t last_scroll_time = 0;
+  // const uint32_t SCROLL_INTERVAL = 33;  // 约30fps
   /* USER CODE END 1 */
 
   /* MPU Configuration--------------------------------------------------------*/
@@ -131,10 +133,14 @@ int main(void)
   MX_TIM17_Init();
   MX_SPI6_Init();
   MX_I2C1_Init();
+  MX_QUADSPI_Init();
   MX_SAI1_Init();
   MX_SDMMC1_SD_Init();
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
+  if(QSPI_W25Qxx_MemoryMappedMode() != QSPI_W25Qxx_OK)
+    Error_Handler();
+
   memset((uint8_t*)mSerialReciveBuffer, 0xff, ReciveSize);
   __HAL_DMA_DISABLE_IT(&hdma_usart1_rx, DMA_IT_HT);
   HAL_UARTEx_ReceiveToIdle_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
@@ -147,6 +153,7 @@ int main(void)
   spiScreen.SetFont(&ASCII_10x20);
   spiScreen.SetFont(&Chinese_16x16);
   LCD_Backlight_ON;
+  i2cScreen.ClearBuffer();
   spiScreen.Clear();
   spiScreen.SetColor(0xFF2070CF);
   spiScreen.FillRect(10, 10, 100, 100);
@@ -158,44 +165,43 @@ int main(void)
   spiScreen.FillRect(130, 130, 100, 100);
   spiScreen.CopyBuffer(10, 10, 128, 128, (uint16_t*)gImage_Akie000);
   spiScreen.CopyBuffer(148, 10, 128, 128, (uint16_t*)gImage_Akie001);
-  i2cScreen.ClearBuffer();
-  i2cScreen.DrawRect(20, 20, 32, 32, 1);
-  i2cScreen.FillRect(64, 30, 32, 32, 1);
-  i2cScreen.UpdateScreen();
-  TIM17_Delay_Ms(2000);
-  i2cScreen.ClearBuffer();
-  i2cScreen.UpdateScreen();
-  spiScreen.SetColor(0xFF00FFFF);
-  spiScreen.SetBackColor(0xFF000000);
-  spiScreen.Clear();
-  TIM17_Delay_Ms(100);
-  i2cScreen.DrawChineseString(0, 0, "Akie秋绘~", 1);
-  i2cScreen.DrawString(0, 16, "Happy Birthday", 1);
-  i2cScreen.DrawNumber(0, 32, 20160126, 1);
-  i2cScreen.DrawFloat(0, 48, 0.767f, 5, 3, 1);
-  i2cScreen.UpdateScreen();
-  spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_CompImage);
-  TIM17_Delay_Ms(2000);
-  spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie004);
-  TIM17_Delay_Ms(2000);
-  spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie005);
-  TIM17_Delay_Ms(2000);
-  spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie008);
-  spiScreen.DrawString(0, 0, "gImage_Akie006");
-  spiScreen.DrawNumber(0, 20, 123);
-  spiScreen.DrawFloat(0, 40, 10.345, 8, 4);
-  spiScreen.DrawChineseString(0, 60, "Akie秋绘");
+  // i2cScreen.DrawRect(20, 20, 32, 32, 1);
+  // i2cScreen.FillRect(64, 30, 32, 32, 1);
+  // i2cScreen.UpdateScreen();
+  // TIM17_Delay_Ms(2000);
+  // i2cScreen.ClearBuffer();
+  // i2cScreen.UpdateScreen();
+  // spiScreen.SetColor(0xFF00FFFF);
+  // spiScreen.SetBackColor(0xFF000000);
+  // spiScreen.Clear();
+  // TIM17_Delay_Ms(100);
+  // i2cScreen.DrawChineseString(0, 0, "Akie秋绘~", 1);
+  // i2cScreen.DrawString(0, 16, "Happy Birthday", 1);
+  // i2cScreen.DrawNumber(0, 32, 20160126, 1);
+  // i2cScreen.DrawFloat(0, 48, 0.767f, 5, 3, 1);
+  // i2cScreen.UpdateScreen();
+  // spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_CompImage);
+  // TIM17_Delay_Ms(2000);
+  // spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie004);
+  // TIM17_Delay_Ms(2000);
+  // spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie005);
+  // TIM17_Delay_Ms(2000);
+  // spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie008);
+  // spiScreen.DrawString(0, 0, "gImage_Akie006");
+  // spiScreen.DrawNumber(0, 20, 123);
+  // spiScreen.DrawFloat(0, 40, 10.345, 8, 4);
+  // spiScreen.DrawChineseString(0, 60, "Akie秋绘");
   // HAL_UART_Receive_IT(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
   // HAL_UART_Receive_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
   // WAV_PlayFile("0:/output.wav");
-  HAL_Delay(3000);
-  g_Image[0] = {.width = 128,
-                .height = 128,
-                .data = (uint8_t*)gImage_Akie000
-              };
-  // 加载图片到LCD驱动
-  spiScreen.LoadImages(g_Image, 1);
-  spiScreen.StartScroll(SCROLL_LEFT, 5);
+  // HAL_Delay(3000);
+  // g_Image[0] = {.width = 128,
+  //               .height = 128,
+  //               .data = (uint8_t*)gImage_Akie000
+  //             };
+  // // 加载图片到LCD驱动
+  // spiScreen.LoadImages(g_Image, 1);
+  // spiScreen.StartScroll(SCROLL_LEFT, 5);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -206,13 +212,13 @@ int main(void)
     // for循环大概一个时钟周期，但该用TIM还得用TIM，HAL_Delay这玩意阻塞的
     // for (volatile int i = 0; i < 48000000; i++);
     // TIM17_Delay_Ms(1000);
-    uint32_t current_time = HAL_GetTick();
+    // uint32_t current_time = HAL_GetTick();
         
-    // 更新滚动显示（控制帧率）
-    if (current_time - last_scroll_time >= SCROLL_INTERVAL) {
-        spiScreen.UpdateScroll();
-        last_scroll_time = current_time;
-    }
+    // // 更新滚动显示（控制帧率）
+    // if (current_time - last_scroll_time >= SCROLL_INTERVAL) {
+    //     spiScreen.UpdateScroll();
+    //     last_scroll_time = current_time;
+    // }
     if(val == 1)
       break;
     // 其他任务
@@ -328,51 +334,53 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 //经过测试，指令只有在非优化或优化等级1才能用，优化等级过高会将这玩意优化掉
 void mProcess_SerialReceiveData(char* data, uint16_t Size)
 {
-  if(strncmp(data, "gImage_Akie004", Size) == 0)
-    {
-      spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie004);
-    }
-  else if (strncmp(data, "gImage_Akie005", Size) == 0)
-    {
-      spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie005);
-    }
-  else if(strncmp(data, "gImage_Akie006", Size) == 0)
-    {
-      spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie006);
-    }
-  else if (strncmp(data, "gImage_Akie007", Size) == 0)
-    {
-      spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie007);
-    }
-  else if (strncmp(data, "gImage_Akie008", Size) == 0)
-    {
-      spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie008);
-    }
-  else if (strncmp(data, "resetMem", Size) == 0) {
-      memset((uint8_t*)mSerialReciveBuffer, 255, ReciveSize);
-    }
-  else if (strncmp(data, "playaudio", Size) == 0) {
-      WAV_PlayFile("0:/output.wav");
-  }
-  else if (strncmp(data, "Exit", Size) == 0) {
-      HAL_UART_Transmit_DMA(&huart1, (uint8_t*)"Application Exit\n", 18);
-      LCD_Backlight_OFF;
-      HAL_Delay(1);
-      HAL_UART_MspDeInit(&huart1);
-      HAL_SPI_MspDeInit(&hspi6);
-      SCB_CleanDCache();
-      SCB_InvalidateICache();
-      __HAL_RCC_USART1_FORCE_RESET();
-      __HAL_RCC_DMA1_FORCE_RESET();
-      HAL_Delay(1);
-      __HAL_RCC_USART1_RELEASE_RESET();
-      __HAL_RCC_DMA1_RELEASE_RESET();
-      __disable_irq();
-      val = 1;
-    }
-  else {
-      HAL_UART_Transmit_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, Size);
-    }
+  UNUSED(data);
+  UNUSED(Size);
+  // if(strncmp(data, "gImage_Akie004", Size) == 0)
+  //   {
+  //     spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie004);
+  //   }
+  // else if (strncmp(data, "gImage_Akie005", Size) == 0)
+  //   {
+  //     spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie005);
+  //   }
+  // else if(strncmp(data, "gImage_Akie006", Size) == 0)
+  //   {
+  //     spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie006);
+  //   }
+  // else if (strncmp(data, "gImage_Akie007", Size) == 0)
+  //   {
+  //     spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie007);
+  //   }
+  // else if (strncmp(data, "gImage_Akie008", Size) == 0)
+  //   {
+  //     spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie008);
+  //   }
+  // else if (strncmp(data, "resetMem", Size) == 0) {
+  //     memset((uint8_t*)mSerialReciveBuffer, 255, ReciveSize);
+  //   }
+  // else if (strncmp(data, "playaudio", Size) == 0) {
+  //     WAV_PlayFile("0:/output.wav");
+  // }
+  // else if (strncmp(data, "Exit", Size) == 0) {
+  //     HAL_UART_Transmit_DMA(&huart1, (uint8_t*)"Application Exit\n", 18);
+  //     LCD_Backlight_OFF;
+  //     HAL_Delay(1);
+  //     HAL_UART_MspDeInit(&huart1);
+  //     HAL_SPI_MspDeInit(&hspi6);
+  //     SCB_CleanDCache();
+  //     SCB_InvalidateICache();
+  //     __HAL_RCC_USART1_FORCE_RESET();
+  //     __HAL_RCC_DMA1_FORCE_RESET();
+  //     HAL_Delay(1);
+  //     __HAL_RCC_USART1_RELEASE_RESET();
+  //     __HAL_RCC_DMA1_RELEASE_RESET();
+  //     __disable_irq();
+  //     val = 1;
+  //   }
+  // else {
+  //     HAL_UART_Transmit_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, Size);
+  //   }
 }
 /* USER CODE END 4 */
 

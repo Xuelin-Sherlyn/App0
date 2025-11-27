@@ -60,6 +60,7 @@ RAM_D1 (xrw)       : ORIGIN = 0x24000000, LENGTH = 512K
 RAM_D2 (xrw)       : ORIGIN = 0x30000000, LENGTH = 288K
 RAM_D3 (xrw)       : ORIGIN = 0x38000000, LENGTH = 64K
 ITCMRAM (xrw)      : ORIGIN = 0x00000000, LENGTH = 64K
+FLASH (rx)         : ORIGIN = 0x08000000, LENGTH = 128K
 QSPIFLASH(rx)      : ORIGIN = 0x90000000, LENGTH = 32M
 }
 
@@ -78,7 +79,7 @@ SECTIONS
     . = ALIGN(4);
     KEEP(*(.isr_vector)) /* Startup code */
     . = ALIGN(4);
-  } >QSPIFLASH
+  } >FLASH
 
   /* The program code and other data goes into FLASH */
   .text :
@@ -95,7 +96,7 @@ SECTIONS
 
     . = ALIGN(4);
     _etext = .;        /* define a global symbols at end of code */
-  } >QSPIFLASH
+  } >FLASH
 
   /* Constant data goes into FLASH */
   .rodata :
@@ -104,14 +105,14 @@ SECTIONS
     *(.rodata)         /* .rodata sections (constants, strings, etc.) */
     *(.rodata*)        /* .rodata* sections (constants, strings, etc.) */
     . = ALIGN(4);
-  } >QSPIFLASH
+  } >FLASH
 
   .ARM.extab (READONLY) : /* The "READONLY" keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
     . = ALIGN(4);
     *(.ARM.extab* .gnu.linkonce.armextab.*)
     . = ALIGN(4);
-  } >QSPIFLASH
+  } >FLASH
 
   .ARM (READONLY) : /* The "READONLY" keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
@@ -120,7 +121,7 @@ SECTIONS
     *(.ARM.exidx*)
     __exidx_end = .;
     . = ALIGN(4);
-  } >QSPIFLASH
+  } >FLASH
 
   .preinit_array (READONLY) : /* The "READONLY" keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
@@ -129,7 +130,7 @@ SECTIONS
     KEEP (*(.preinit_array*))
     PROVIDE_HIDDEN (__preinit_array_end = .);
     . = ALIGN(4);
-  } >QSPIFLASH
+  } >FLASH
 
   .init_array (READONLY) : /* The "READONLY" keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
@@ -139,7 +140,7 @@ SECTIONS
     KEEP (*(.init_array*))
     PROVIDE_HIDDEN (__init_array_end = .);
     . = ALIGN(4);
-  } >QSPIFLASH
+  } >FLASH
 
   .fini_array (READONLY) : /* The "READONLY" keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
@@ -149,7 +150,7 @@ SECTIONS
     KEEP (*(.fini_array*))
     PROVIDE_HIDDEN (__fini_array_end = .);
     . = ALIGN(4);
-  } >QSPIFLASH
+  } >FLASH
 
   /* used by the startup to initialize data */
   _sidata = LOADADDR(.data);
@@ -165,7 +166,7 @@ SECTIONS
     *(.RamFunc*)       /* .RamFunc* sections */
 
     . = ALIGN(4);
-  } >DTCMRAM AT> QSPIFLASH
+  } >DTCMRAM AT> FLASH
 
  /* Initialized TLS data section */
   .tdata : ALIGN(4)
@@ -175,7 +176,7 @@ SECTIONS
     _edata = .;        /* define a global symbol at data end */
     PROVIDE(__data_end = .);
     PROVIDE(__tdata_end = .);
-  } >DTCMRAM AT> QSPIFLASH
+  } >DTCMRAM AT> FLASH
 
   PROVIDE( __tdata_start = ADDR(.tdata) );
   PROVIDE( __tdata_size = __tdata_end - __tdata_start );
@@ -240,17 +241,6 @@ SECTIONS
     . = ALIGN(8);
   } >DTCMRAM
 
-/* 在QSPI Flash中执行代码所需的特殊部分 */
-  .qspiflash :
-  {
-    . = ALIGN(4);
-    *(.text)           /* .text sections (code) */
-    *(.text*)          /* .text* sections (code) */
-    *(.rodata)         /* .rodata sections (constants, strings, etc.) */
-    *(.rodata*)        /* .rodata* sections (constants, strings, etc.) */
-    . = ALIGN(4);
-  } >QSPIFLASH AT> QSPIFLASH
-
   .ram_d1 :
   {
     . = ALIGN(4);
@@ -264,6 +254,35 @@ SECTIONS
     *(.ram_d1)
     . = ALIGN(4);
   } >RAM_D2
+
+  /* 在QSPI Flash中执行代码所需的特殊部分 */
+  .qspiflash :
+  {
+    . = ALIGN(4);
+    *(.text)           /* .text sections (code) */
+    *(.text*)          /* .text* sections (code) */
+    *(.rodata)         /* .rodata sections (constants, strings, etc.) */
+    *(.rodata*)        /* .rodata* sections (constants, strings, etc.) */
+    . = ALIGN(4);
+  } >QSPIFLASH AT> QSPIFLASH
+
+  .ExtFlashSection :
+  {
+    . = ALIGN(4);
+    *(.ExtFlashSection)
+    *(.ExtFlashSection.*)
+    *(.FontFlashSection)
+    *(.FontFlashSection.*)
+    . = ALIGN(4);
+  } >QSPIFLASH
+
+  /* QSPI Flash 统计符号 */
+  PROVIDE(__qspiflash_start = ORIGIN(QSPIFLASH));
+  PROVIDE(__qspiflash_end = ORIGIN(QSPIFLASH) + LENGTH(QSPIFLASH));
+  PROVIDE(__qspiflash_code_start = ADDR(.qspiflash));
+  PROVIDE(__qspiflash_code_end = ADDR(.qspiflash) + SIZEOF(.qspiflash));
+  PROVIDE(__extflash_start = ADDR(.ExtFlashSection));
+  PROVIDE(__extflash_end = ADDR(.ExtFlashSection) + SIZEOF(.ExtFlashSection));
 
   /* Remove information from the standard libraries */
   /DISCARD/ :

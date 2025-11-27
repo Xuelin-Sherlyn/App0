@@ -19,8 +19,8 @@ private:
 
     I2C_HandleTypeDef* hi2c;
     uint8_t SSD1306_Display_Buffer[SSD1306_WIDTH * SSD1306_PAGES];
-    pFONT* ASCII_Font;
-    pFONT* Chinese_Font;
+    pFONT* ASCII_Font = NULL;
+    pFONT* Chinese_Font = NULL;
 
     HAL_StatusTypeDef WriteCommand(uint8_t command);
     HAL_StatusTypeDef WriteCommands(uint8_t *commands, uint16_t len);

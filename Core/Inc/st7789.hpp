@@ -35,8 +35,8 @@ private:
     uint16_t ForgColor = 0x0000;
     uint16_t BackColor = 0x0000;
     uint16_t ST7789_Display_Buffer[1024];
-    pFONT* ASCII_Font;
-    pFONT* Chinese_Font;
+    pFONT* ASCII_Font = NULL;
+    pFONT* Chinese_Font = NULL;
 
     // 滚动相关变量
     int16_t scroll_offset_x = 0;

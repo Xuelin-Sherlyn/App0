@@ -1,4 +1,5 @@
 #include "ssd1306.hpp"
+#include "main.h"
 #include "stm32h7xx_hal_def.h"
 #include "stm32h7xx_hal_i2c.h"
 #include <cstdint>
@@ -15,11 +16,11 @@ SSD1306::SSD1306(I2C_HandleTypeDef* hi2cHandle) : hi2c(hi2cHandle){}
   */
 HAL_StatusTypeDef SSD1306::Init(void) {
     uint8_t init_cmds[] = {
-    0xAE,           // 关闭显示
+    0xAE,       // 关闭显示
     0xD5, 0x80, // 设置显示时钟分频/振荡器频率
     0xA8, 0x3F, // 设置多路复用率（1/64）
     0xD3, 0x00, // 设置显示偏移
-    0x40,           // 设置显示起始行
+    0x40,       // 设置显示起始行
     0x8D, 0x14, // 启用电荷泵
     0x20, 0x00, // 设置内存模式（水平寻址）
     0xA1,       // 段重映射（SEG0->SEG127）
@@ -52,7 +53,7 @@ HAL_StatusTypeDef SSD1306::WriteCommand(uint8_t command) {
   * @retval HAL状态
   */
 HAL_StatusTypeDef SSD1306::WriteCommands(uint8_t *commands, uint16_t len) {
-        // 显式类型转换解决编译错误
+    // 显式类型转换解决编译错误
     uint8_t *buf = (uint8_t*)malloc(len + 1);
     if (buf == NULL) return HAL_ERROR;
     
@@ -224,6 +225,8 @@ void SSD1306::FillRect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t color
   */
 void SSD1306::DrawChar(uint8_t x, uint8_t y, char ch, uint8_t color)
 {
+    if (ch == 0 || ASCII_Font == nullptr) return;
+
     // 只处理可打印字符
     if (ch < 32 || ch > 127) return;
     
@@ -261,6 +264,8 @@ void SSD1306::DrawChar(uint8_t x, uint8_t y, char ch, uint8_t color)
   */
 void SSD1306::DrawString(uint8_t x, uint8_t y, const char* str, uint8_t color)
 {
+    if (str == nullptr || ASCII_Font == nullptr) return;
+
     uint8_t pos = x;
     while (*str) {
         DrawChar(pos, y, *str++, color);

@@ -1,5 +1,6 @@
 #include "compImage.h"
 
+__attribute__((section(".ExtFlashSection"), aligned(32)))
 const unsigned char gImage_CompImage[153600] = { /* 0X00,0X10,0X40,0X01,0XF0,0X00,0X01,0X1B, */
 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
 0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,0X00,
