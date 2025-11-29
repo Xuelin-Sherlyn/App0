@@ -32,18 +32,18 @@ typedef struct {
     uint16_t bit_depth;         // 位深度
     uint32_t data_size;         // 音频数据大小
     uint32_t data_offset;       // 音频数据偏移
-    uint32_t total_samples;     // 总采样点数
+    uint64_t total_samples;     // 总采样点数
     uint32_t duration_ms;       // 音频时长(ms)
 } WAV_Info;
 
 // 音频播放控制结构
 typedef struct {
-    Audio_State state;
-    FIL file;
-    WAV_Info info;
-    uint32_t bytes_remaining;
-    uint32_t total_bytes;
-    uint32_t current_position;
+    Audio_State state;          // 音频播放状态
+    FIL file;                   // 音频FatFS文件句柄
+    WAV_Info info;              // WAV文件信息
+    uint32_t bytes_remaining;   // 字节数
+    uint32_t total_bytes;       // 当前字节
+    uint32_t current_position;  // 当前位置
 } WAV_Player;
 
 // WAV文件块标识
@@ -77,10 +77,9 @@ uint8_t WAV_IsPlaying(void);
 uint32_t WAV_GetCurrentTime(void);
 uint32_t WAV_GetDuration(void);
 void WAV_Performance_Monitor(void);
-
-// 回调函数（需要在main.c中调用）
-extern void WAV_SAI_DMA_HalfComplete_Callback(DMA_HandleTypeDef* hdma);
-extern void WAV_SAI_DMA_Complete_Callback(DMA_HandleTypeDef* hdma);
+void WAV_ResetPlayer(void);
+uint8_t WAV_ReinitSAI(void);
+uint8_t WAV_PlayFile_WithRetry(const TCHAR* filename, uint8_t max_retries);
 
 #ifdef __cplusplus
 }

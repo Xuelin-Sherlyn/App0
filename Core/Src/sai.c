@@ -22,7 +22,7 @@
 #include "sai.h"
 
 /* USER CODE BEGIN 0 */
-#include "wav_player.h"
+#include "stm32h7xx_hal_def.h"
 /* USER CODE END 0 */
 
 SAI_HandleTypeDef hsai_BlockA1;
@@ -139,7 +139,7 @@ void HAL_SAI_MspInit(SAI_HandleTypeDef* saiHandle)
     hdma_sai1_a.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
     hdma_sai1_a.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
     hdma_sai1_a.Init.Mode = DMA_CIRCULAR;
-    hdma_sai1_a.Init.Priority = DMA_PRIORITY_VERY_HIGH;
+    hdma_sai1_a.Init.Priority = DMA_PRIORITY_HIGH;
     hdma_sai1_a.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
     hdma_sai1_a.XferCpltCallback = WAV_SAI_DMA_HalfComplete_Callback;
     hdma_sai1_a.XferM1CpltCallback = WAV_SAI_DMA_Complete_Callback;
@@ -185,7 +185,15 @@ void HAL_SAI_MspDeInit(SAI_HandleTypeDef* saiHandle)
 /**
   * @}
   */
+  __weak void WAV_SAI_DMA_HalfComplete_Callback(DMA_HandleTypeDef* hdma)
+  {
+    UNUSED(hdma);
+  }
 
 /**
   * @}
   */
+  __weak void WAV_SAI_DMA_Complete_Callback(DMA_HandleTypeDef* hdma)
+  {
+    UNUSED(hdma);
+  }

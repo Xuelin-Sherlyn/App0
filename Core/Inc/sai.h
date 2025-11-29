@@ -41,7 +41,8 @@ extern SAI_HandleTypeDef hsai_BlockA1;
 void MX_SAI1_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-
+void WAV_SAI_DMA_HalfComplete_Callback(DMA_HandleTypeDef* hdma);
+void WAV_SAI_DMA_Complete_Callback(DMA_HandleTypeDef* hdma);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

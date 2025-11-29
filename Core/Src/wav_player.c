@@ -10,18 +10,15 @@
 // 全局播放器实例
 static WAV_Player wav_player = {0};
 
-__attribute__((section(".ram_d1"), aligned(32)))
-uint32_t sai_tx_buffer[2][SAI_BUFFER_SIZE] = {{0}}; // 双缓冲
-
 // 音频数据缓冲区
 static uint8_t audio_data_buffer[2][WAV_BUFFER_SIZE];
 static volatile uint8_t current_buffer = 0;
 static volatile uint8_t buffer_filled[2] = {0, 0};
 volatile float cpu_usage = 0.00f;
 
-/**
-  * @brief  音频格式转换（16/24/8bit -> 24bit SAI格式）
-  */
+__attribute__((section(".ram_d1"), aligned(32)))
+uint32_t sai_tx_buffer[2][SAI_BUFFER_SIZE] = {{0}}; // 双缓冲
+
 /**
   * @brief  音频格式转换（16bit -> 24bit SAI格式）
   */
@@ -296,8 +293,15 @@ WAV_Status WAV_ParseHeader(FIL* file, WAV_Info* info) {
 uint8_t WAV_PlayFile(const TCHAR* filename) {
     printf("\n=== WAV_PlayFile: %s ===\n", filename);
     
-    // 停止当前播放
-    WAV_StopPlayback();
+    // // 停止当前播放
+    // WAV_StopPlayback();
+    WAV_ResetPlayer();
+
+    // 重新初始化SAI和DMA（关键修复）
+    if(!WAV_ReinitSAI()) {
+        printf("WAV_PlayFile: Failed to reinitialize SAI\n");
+        return 0;
+    }
     
     // 打开文件
     FRESULT fr = f_open(&wav_player.file, filename, FA_READ);
@@ -376,8 +380,13 @@ void WAV_StartPlayback(void) {
     current_buffer = 0;
     
     // 先停止任何正在进行的DMA传输
+    __disable_irq();
+    // 停止DMA传输
+    HAL_DMA_Abort(&hdma_sai1_a);
     HAL_SAI_DMAStop(&hsai_BlockA1);
-    HAL_Delay(1);
+    HAL_SAI_Abort(&hsai_BlockA1);
+    __enable_irq();
+    HAL_Delay(10);
     
     // 填充两个缓冲区
     uint32_t buffer0_result = Fill_Audio_Buffer(0);
@@ -407,8 +416,6 @@ void WAV_StartPlayback(void) {
     // 使用与正弦波测试相同的方式启动DMA
     // 注意：这里使用 HAL_DMAEx_MultiBufferStart 而不是 HAL_SAI_Transmit_DMA
     __disable_irq();
-    // 先停止DMA
-    HAL_DMA_Abort(&hdma_sai1_a);
     
     // 使用多缓冲区模式启动DMA（与正弦波测试相同）
     HAL_StatusTypeDef dma_status = HAL_DMAEx_MultiBufferStart(&hdma_sai1_a,
@@ -455,9 +462,14 @@ void WAV_StartPlayback(void) {
 void WAV_StartPlayback_Alternative(void) {
     printf("WAV_StartPlayback_Alternative: Using alternative startup method\n");
     __disable_irq();
-    // 停止DMA
-    HAL_DMA_Abort(&hdma_sai1_a);
     
+    // 停止DMA传输
+    HAL_DMA_Abort(&hdma_sai1_a);
+    HAL_SAI_DMAStop(&hsai_BlockA1);
+    HAL_SAI_Abort(&hsai_BlockA1);
+    __enable_irq();
+    HAL_Delay(10);
+    __disable_irq();
     // 配置DMA多缓冲区
     HAL_StatusTypeDef dma_status = HAL_DMAEx_MultiBufferStart_IT(&hdma_sai1_a,
                                      (uint32_t)sai_tx_buffer[0], 
@@ -465,7 +477,6 @@ void WAV_StartPlayback_Alternative(void) {
                                      (uint32_t)sai_tx_buffer[1], 
                                      SAI_BUFFER_SIZE);
     __enable_irq();
-    
     if(dma_status == HAL_OK) {
         printf("WAV_StartPlayback_Alternative: DMA started successfully\n");
         
@@ -566,7 +577,7 @@ void WAV_ResumePlayback(void) {
   * @brief  检查是否正在播放
   */
 uint8_t WAV_IsPlaying(void) {
-    return (wav_player.state == AUDIO_PLAYING);
+    return wav_player.state;
 }
 
 /**
@@ -611,6 +622,98 @@ void WAV_Performance_Monitor(void) {
     }
     
     callback_count++;
+}
+
+/**
+  * @brief  完全重置播放器状态
+  */
+void WAV_ResetPlayer(void) {
+    f_close(&wav_player.file);
+    // 停止DMA传输
+    __disable_irq();
+    HAL_DMA_Abort(&hdma_sai1_a);
+    HAL_SAI_DMAStop(&hsai_BlockA1);
+    HAL_SAI_Abort(&hsai_BlockA1);
+    __enable_irq();
+    
+    // 重置播放器状态
+    wav_player.state = AUDIO_STOPPED;
+    wav_player.bytes_remaining = 0;
+    wav_player.total_bytes = 0;
+    wav_player.current_position = 0;
+    memset(&wav_player.info, 0, sizeof(WAV_Info));
+    
+    // 重置缓冲区状态
+    buffer_filled[0] = 0;
+    buffer_filled[1] = 0;
+    current_buffer = 0;
+    
+    // 清空缓冲区
+    memset(audio_data_buffer[0], 0, WAV_BUFFER_SIZE);
+    memset(audio_data_buffer[1], 0, WAV_BUFFER_SIZE);
+    memset(sai_tx_buffer[0], 0, SAI_BUFFER_SIZE * sizeof(uint32_t));
+    memset(sai_tx_buffer[1], 0, SAI_BUFFER_SIZE * sizeof(uint32_t));
+    
+    // 清除Cache
+    SCB_CleanDCache_by_Addr((uint32_t*)sai_tx_buffer[0], SAI_BUFFER_SIZE * sizeof(uint32_t));
+    SCB_CleanDCache_by_Addr((uint32_t*)sai_tx_buffer[1], SAI_BUFFER_SIZE * sizeof(uint32_t));
+    
+    printf("WAV_ResetPlayer: Player state fully reset\n");
+}
+
+/**
+  * @brief  重新初始化SAI和DMA
+  */
+uint8_t WAV_ReinitSAI(void) {
+    printf("WAV_ReinitSAI: Reinitializing SAI and DMA\n");
+    
+    // 完全停止SAI和DMA
+    __disable_irq();
+    HAL_DMA_Abort(&hdma_sai1_a);
+    HAL_SAI_DMAStop(&hsai_BlockA1);
+    HAL_SAI_Abort(&hsai_BlockA1);
+    __enable_irq();
+    
+    HAL_Delay(50);
+    
+    // 重新初始化SAI
+    HAL_StatusTypeDef sai_status = HAL_SAI_DeInit(&hsai_BlockA1);
+    if(sai_status != HAL_OK) {
+        printf("WAV_ReinitSAI: SAI deinit failed: %d\n", sai_status);
+    }
+    
+    HAL_Delay(10);
+    
+    sai_status = HAL_SAI_Init(&hsai_BlockA1);
+    if(sai_status != HAL_OK) {
+        printf("WAV_ReinitSAI: SAI init failed: %d\n", sai_status);
+        return 0;
+    }
+    
+    // 重新配置DMA中断
+    __HAL_DMA_ENABLE_IT(&hdma_sai1_a, DMA_IT_TC | DMA_IT_HT | DMA_IT_TE);
+    
+    printf("WAV_ReinitSAI: SAI and DMA reinitialized successfully\n");
+    return 1;
+}
+
+uint8_t WAV_PlayFile_WithRetry(const TCHAR* filename, uint8_t max_retries) {
+    for (int attempt = 0; attempt < max_retries; attempt++) {
+        if (attempt > 0) {
+            printf("Retry attempt %d/%d\n", attempt + 1, max_retries);
+            HAL_Delay(100); // 重试前延迟
+        }
+        
+        if (WAV_PlayFile(filename)) {
+            return 1; // 成功
+        }
+        
+        // 完全重置系统状态
+        WAV_ResetPlayer();
+        HAL_Delay(50);
+    }
+    
+    return 0; // 所有重试都失败
 }
 
 /**
