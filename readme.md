@@ -11,4 +11,8 @@
     MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
 如果跑不起来可以调试一下AppLoader，看看执行到了哪个地址，然后看看./build/$Project Type/$Project Name.map，70%概率卡在\"HardFault_Handler\"或者\"MemManager_Handler\"这两个函数
 
+### 开发者的碎碎念
+
 2025/10/20:串口指令莫名失效了，有点奇怪，虽然不用串口指令也行🤔
+
+2025/11/29:音频部分DMA的FIFO一直出故障，但单开个项目又正常，所以问题到底出在哪？🙃

@@ -141,9 +141,9 @@ int main(void)
   if(QSPI_W25Qxx_MemoryMappedMode() != QSPI_W25Qxx_OK)
     Error_Handler();
 
-  memset((uint8_t*)mSerialReciveBuffer, 0xff, ReciveSize);
-  __HAL_DMA_DISABLE_IT(&hdma_usart1_rx, DMA_IT_HT);
-  HAL_UARTEx_ReceiveToIdle_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
+  // memset((uint8_t*)mSerialReciveBuffer, 0xff, ReciveSize);
+  // __HAL_DMA_DISABLE_IT(&hdma_usart1_rx, DMA_IT_HT);
+  // HAL_UARTEx_ReceiveToIdle_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
   printf("\033[35mThis is a run in QSPI Flash`s Application, Execute method is XIP\n\033[31mCall \"resetMem\"to clean usart1 recive memory, \"Exit\" to exit Application\033[0m\n");
   i2cScreen.Init();
   spiScreen.Init();
@@ -166,21 +166,21 @@ int main(void)
   spiScreen.CopyBuffer(10, 10, 128, 128, (uint16_t*)gImage_Akie000);
   spiScreen.CopyBuffer(148, 10, 128, 128, (uint16_t*)gImage_Akie001);
   i2cScreen.DrawRect(20, 20, 32, 32, 1);
-  i2cScreen.FillRect(64, 30, 32, 32, 1);
+  // i2cScreen.FillRect(64, 30, 32, 32, 1);
   i2cScreen.UpdateScreen();
   TIM17_Delay_Ms(2000);
-  i2cScreen.ClearBuffer();
-  i2cScreen.UpdateScreen();
-  spiScreen.SetColor(0xFF00FFFF);
-  spiScreen.SetBackColor(0xFF000000);
-  spiScreen.Clear();
-  TIM17_Delay_Ms(100);
+  // i2cScreen.ClearBuffer();
+  // i2cScreen.UpdateScreen();
+  // spiScreen.SetColor(0xFF00FFFF);
+  // spiScreen.SetBackColor(0xFF000000);
+  // spiScreen.Clear();
+  // TIM17_Delay_Ms(100);
   i2cScreen.DrawChineseString(0, 0, "Akie秋绘~", 1);
   i2cScreen.DrawString(0, 16, "Happy Birthday", 1);
   i2cScreen.DrawNumber(0, 32, 20160126, 1);
   i2cScreen.DrawFloat(0, 48, 0.767f, 5, 3, 1);
   i2cScreen.UpdateScreen();
-  // spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_CompImage);
+  spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_CompImage);
   // TIM17_Delay_Ms(2000);
   // spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie004);
   // TIM17_Delay_Ms(2000);
@@ -194,7 +194,7 @@ int main(void)
   // HAL_UART_Receive_IT(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
   // HAL_UART_Receive_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
   WAV_PlayFile("0:/output0.wav");
-  HAL_Delay(3000);
+  // HAL_Delay(3000);
   // g_Image[0] = {.width = 128,
   //               .height = 128,
   //               .data = (uint8_t*)gImage_Akie000

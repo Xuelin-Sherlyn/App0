@@ -22,7 +22,7 @@
 #include "sai.h"
 
 /* USER CODE BEGIN 0 */
-#include "stm32h7xx_hal_def.h"
+
 /* USER CODE END 0 */
 
 SAI_HandleTypeDef hsai_BlockA1;
@@ -131,7 +131,7 @@ void HAL_SAI_MspInit(SAI_HandleTypeDef* saiHandle)
 
     /* Peripheral DMA init*/
 
-    hdma_sai1_a.Instance = DMA1_Stream0;
+    hdma_sai1_a.Instance = DMA1_Stream2;
     hdma_sai1_a.Init.Request = DMA_REQUEST_SAI1_A;
     hdma_sai1_a.Init.Direction = DMA_MEMORY_TO_PERIPH;
     hdma_sai1_a.Init.PeriphInc = DMA_PINC_DISABLE;
