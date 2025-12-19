@@ -4,7 +4,7 @@
 
 在创建同类应用的时候，需要将程序入口点设为QSPI Flash的地址(0x90000000),或者你的目标地址，并且将MPU关闭或者设置为 MPU_REGION_FULL_ACCESS。
 
-另外，QSPI Flash不支持缓冲区和分享，但可以稍微缓存数据，因此MPU设为这个
+另外，QSPI Flash不支持缓冲区，但可以稍微缓存数据，因此MPU设为这个
 
     MPU_InitStruct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
     MPU_InitStruct.IsCacheable = MPU_ACCESS_CACHEABLE;
@@ -16,3 +16,12 @@
 2025/10/20:串口指令莫名失效了，有点奇怪，虽然不用串口指令也行🤔
 
 2025/11/29:音频部分DMA的FIFO一直出故障，但单开个项目又正常，所以问题到底出在哪？🙃
+
+## 许可证
+
+本项目采用**双许可证**模式：
+
+- **个人/非商业使用**：遵循 [GPLv3 许可证](License.txt)
+- **商业使用**：需获取商业授权，请联系 [xuelin-sherlyn@outlook.com](mailto:xuelin-sherlyn@outlook.com)
+
+简单说：个人、学习、研究随便用；公司商用请先联系我获取授权。

@@ -25,9 +25,6 @@
 #include "tim.h"
 #include <stdio.h>
 
-uint16_t ForgColor = 0x0000;
-uint16_t BackColor = 0x0000;
-uint16_t LCD_Buff[1024];
 /* USER CODE END 0 */
 
 SPI_HandleTypeDef hspi6;

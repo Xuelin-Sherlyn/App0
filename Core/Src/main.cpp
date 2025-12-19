@@ -63,14 +63,14 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-SSD1306 i2cScreen(&hi2c1);
+// SSD1306 i2cScreen(&hi2c1);
 ST7789 spiScreen(&hspi6);
-AS5600 sensor(&hi2c1);
+// AS5600 sensor(&hi2c1);
 Image_t g_Image[1];
 
-volatile uint8_t val = 0;
-__attribute__((section(".ram_d1")))
-  volatile char mSerialReciveBuffer[ReciveSize];
+// volatile uint8_t val = 0;
+// __attribute__((section(".ram_d1")))
+//   volatile char mSerialReciveBuffer[ReciveSize];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -142,18 +142,18 @@ int main(void)
     Error_Handler();
 
   // memset((uint8_t*)mSerialReciveBuffer, 0xff, ReciveSize);
-  // __HAL_DMA_DISABLE_IT(&hdma_usart1_rx, DMA_IT_HT);
+  __HAL_DMA_DISABLE_IT(&hdma_usart1_rx, DMA_IT_HT);
   // HAL_UARTEx_ReceiveToIdle_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
   printf("\033[35mThis is a run in QSPI Flash`s Application, Execute method is XIP\n\033[31mCall \"resetMem\"to clean usart1 recive memory, \"Exit\" to exit Application\033[0m\n");
-  i2cScreen.Init();
+  // i2cScreen.Init();
   spiScreen.Init();
-  sensor.Init();
-  i2cScreen.SetFont(&ASCII_8x16);
-  i2cScreen.SetFont(&Chinese_16x16);
+  // sensor.Init();
+  // i2cScreen.SetFont(&ASCII_8x16);
+  // i2cScreen.SetFont(&Chinese_16x16);
   spiScreen.SetFont(&ASCII_10x20);
   spiScreen.SetFont(&Chinese_16x16);
   LCD_Backlight_ON;
-  i2cScreen.ClearBuffer();
+  // i2cScreen.ClearBuffer();
   spiScreen.Clear();
   spiScreen.SetColor(0xFF2070CF);
   spiScreen.FillRect(10, 10, 100, 100);
@@ -165,21 +165,21 @@ int main(void)
   spiScreen.FillRect(130, 130, 100, 100);
   spiScreen.CopyBuffer(10, 10, 128, 128, (uint16_t*)gImage_Akie000);
   spiScreen.CopyBuffer(148, 10, 128, 128, (uint16_t*)gImage_Akie001);
-  i2cScreen.DrawRect(20, 20, 32, 32, 1);
+  // i2cScreen.DrawRect(20, 20, 32, 32, 1);
   // i2cScreen.FillRect(64, 30, 32, 32, 1);
-  i2cScreen.UpdateScreen();
+  // i2cScreen.UpdateScreen();
   TIM17_Delay_Ms(2000);
   // i2cScreen.ClearBuffer();
   // i2cScreen.UpdateScreen();
-  // spiScreen.SetColor(0xFF00FFFF);
-  // spiScreen.SetBackColor(0xFF000000);
-  // spiScreen.Clear();
+  spiScreen.SetColor(0xFF00FFFF);
+  spiScreen.SetBackColor(0xFF000000);
+  spiScreen.Clear();
   // TIM17_Delay_Ms(100);
-  i2cScreen.DrawChineseString(0, 0, "Akie秋绘~", 1);
-  i2cScreen.DrawString(0, 16, "Happy Birthday", 1);
-  i2cScreen.DrawNumber(0, 32, 20160126, 1);
-  i2cScreen.DrawFloat(0, 48, 0.767f, 5, 3, 1);
-  i2cScreen.UpdateScreen();
+  // i2cScreen.DrawChineseString(0, 0, "Akie秋绘~", 1);
+  // i2cScreen.DrawString(0, 16, "Happy Birthday", 1);
+  // i2cScreen.DrawNumber(0, 32, 20160126, 1);
+  // i2cScreen.DrawFloat(0, 48, 0.767f, 5, 3, 1);
+  // i2cScreen.UpdateScreen();
   spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_CompImage);
   // TIM17_Delay_Ms(2000);
   // spiScreen.CopyBuffer(0, 0, 320, 240, (uint16_t*)gImage_Akie004);
@@ -194,7 +194,7 @@ int main(void)
   // HAL_UART_Receive_IT(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
   // HAL_UART_Receive_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
   WAV_PlayFile("0:/output0.wav");
-  // HAL_Delay(3000);
+  HAL_Delay(3000);
   // g_Image[0] = {.width = 128,
   //               .height = 128,
   //               .data = (uint8_t*)gImage_Akie000
@@ -214,21 +214,21 @@ int main(void)
     // TIM17_Delay_Ms(1000);
     // uint32_t current_time = HAL_GetTick();
         
-    // // 更新滚动显示（控制帧率）
+    // 更新滚动显示（控制帧率）
     // if (current_time - last_scroll_time >= SCROLL_INTERVAL) {
     //     spiScreen.UpdateScroll();
     //     last_scroll_time = current_time;
     // }
-    if(val == 1)
-      break;
+    // if(val == 1)
+    //   break;
     // 其他任务
-    i2cScreen.ClearBuffer();
-    i2cScreen.DrawChineseString(0, 0, "Akie秋绘~", 1);
-    i2cScreen.DrawString(0, 16, "Happy Birthday", 1);
-    i2cScreen.DrawNumber(0, 32, 20160126, 1);
-    i2cScreen.DrawFloat(0, 48, 0.767f, 5, 3, 1);
-    i2cScreen.DrawFloat(48, 48, sensor.ReadAngle(), 8, 4, 1);
-    i2cScreen.UpdateScreen();
+    // i2cScreen.ClearBuffer();
+    // i2cScreen.DrawChineseString(0, 0, "Akie秋绘~", 1);
+    // i2cScreen.DrawString(0, 16, "Happy Birthday", 1);
+    // i2cScreen.DrawNumber(0, 32, 20160126, 1);
+    // i2cScreen.DrawFloat(0, 48, 0.767f, 5, 3, 1);
+    // i2cScreen.DrawFloat(48, 48, sensor.ReadAngle(), 8, 4, 1);
+    // i2cScreen.UpdateScreen();
     // printf("Angle:%f\n", sensor.ReadAngle());
     HAL_Delay(1);
     /* USER CODE END WHILE */
@@ -323,11 +323,11 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
   if(huart->Instance == USART1)
   {
     // HAL_UART_Transmit_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, Size);
-    SCB_InvalidateDCache_by_Addr((uint32_t*)mSerialReciveBuffer, ReciveSize);
-    mProcess_SerialReceiveData((char*)mSerialReciveBuffer, Size);
-    SCB_InvalidateDCache_by_Addr((uint32_t*)mSerialReciveBuffer, ReciveSize);
-    __HAL_DMA_DISABLE_IT(&hdma_usart1_rx, DMA_IT_HT);
-    HAL_UARTEx_ReceiveToIdle_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
+    // SCB_InvalidateDCache_by_Addr((uint32_t*)mSerialReciveBuffer, ReciveSize);
+    // mProcess_SerialReceiveData((char*)mSerialReciveBuffer, Size);
+    // SCB_InvalidateDCache_by_Addr((uint32_t*)mSerialReciveBuffer, ReciveSize);
+    // __HAL_DMA_DISABLE_IT(&hdma_usart1_rx, DMA_IT_HT);
+    // HAL_UARTEx_ReceiveToIdle_DMA(&huart1, (uint8_t*)mSerialReciveBuffer, ReciveSize);
   }
 }
 
@@ -400,10 +400,10 @@ void MPU_Config(void)
   MPU_InitStruct.BaseAddress = 0x20000000;
   MPU_InitStruct.Size = MPU_REGION_SIZE_128KB;
   MPU_InitStruct.SubRegionDisable = 0x00;
-  MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL0;
+  MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL1;
   MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
   MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_ENABLE;
-  MPU_InitStruct.IsShareable = MPU_ACCESS_SHAREABLE;
+  MPU_InitStruct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
   MPU_InitStruct.IsCacheable = MPU_ACCESS_CACHEABLE;
   MPU_InitStruct.IsBufferable = MPU_ACCESS_BUFFERABLE;
 
@@ -415,7 +415,7 @@ void MPU_Config(void)
   MPU_InitStruct.BaseAddress = 0x24000000;
   MPU_InitStruct.Size = MPU_REGION_SIZE_512KB;
   MPU_InitStruct.SubRegionDisable = 0x0;
-  MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
+  MPU_InitStruct.IsShareable = MPU_ACCESS_SHAREABLE;
 
   HAL_MPU_ConfigRegion(&MPU_InitStruct);
 
@@ -423,8 +423,8 @@ void MPU_Config(void)
   */
   MPU_InitStruct.Number = MPU_REGION_NUMBER2;
   MPU_InitStruct.BaseAddress = 0x90000000;
-  MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL0;
   MPU_InitStruct.Size = MPU_REGION_SIZE_32MB;
+  MPU_InitStruct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
   MPU_InitStruct.IsCacheable = MPU_ACCESS_CACHEABLE;
   MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
 
